@@ -1,0 +1,10 @@
+{%extends 'web/base.html' %}
+
+{%block title%} BlogPost - Login{%endblock%}
+
+{%block authForm%}
+<form method="post" action="">
+     {{login_form.as_p}}
+    <button type="submit">Login</button>
+</form>
+{%endblock%}

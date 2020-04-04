@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{%block title%} BlogPost{%endblock%}</title>
+</head>
+<body>
+<h1>BlogPost</h1>
+<a href="{%url 'web:login'%}"><h1>Login</h1></a>
+<a href="{%url 'web:register'%}"> <h1>Account anlegen</h1></a>
+{%block authForm%}
+
+{%endblock%}
+</body>
+</html>

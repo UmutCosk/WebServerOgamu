@@ -1,0 +1,10 @@
+{%extends 'web/base.html' %}
+
+{%block title%} BlogPost - Account anlegen{%endblock%}
+
+{%block authForm%}
+<form method="post" action="">
+    {{register_form.as_p}}
+    <button type="submit">Account anlegen</button>
+</form>
+{%endblock%}
