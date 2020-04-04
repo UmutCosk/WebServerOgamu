@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6bf21346-9f91-4f5a-8131-f2da0ab28678" name="Default Changelist" comment="" />
+    <list default="true" id="6bf21346-9f91-4f5a-8131-f2da0ab28678" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ogamu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ogamu.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/blog/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/website/blog/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/web/templates/web/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/website/web/templates/web/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/web/templates/web/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/website/web/templates/web/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/web/templates/web/register.html" beforeDir="false" afterPath="$PROJECT_DIR$/website/web/templates/web/register.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/web/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/website/web/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/web/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/website/web/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/website/website/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/website/website/settings.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,17 +27,25 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1ZzccG5euimHMmnc2pVc2FQdtxR" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -41,9 +61,13 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="276" y="135" key="SettingsEditor" timestamp="1585989932228">
+    <state x="697" y="305" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1586000791673">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="276" y="135" key="SettingsEditor/1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585989932228" />
+    <state x="697" y="305" key="#com.intellij.fileTypes.FileTypeChooser/1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1586000791673" />
+    <state x="276" y="135" key="SettingsEditor" timestamp="1585992706372">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="276" y="135" key="SettingsEditor/1920.0.1920.1040/0.0.1920.1040@0.0.1920.1040" timestamp="1585992706372" />
   </component>
 </project>
