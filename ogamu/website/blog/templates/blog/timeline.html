@@ -1,0 +1,14 @@
+{% extends 'blog/base.html' %}
+
+{% block blogContent %}
+    <form action="{% url '' %}" method="post">
+
+    </form>
+    {% for post in posts %}
+        <p>
+            {{post.message}}
+        </p>
+    {% empty %}
+        <p>Du hast noch nichts eingetragen</p>
+    {% endfor %}
+{% endblock %}

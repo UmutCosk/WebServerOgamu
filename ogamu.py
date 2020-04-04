@@ -15,7 +15,7 @@ test_on = False
 # ---Expeditions--- #
 expo_an = True
 kleine_transporter_exp = 0
-große_transporter_exp = 200
+große_transporter_exp = 400
 spio_sonde_exp = 1
 leichte_jaeger_exp = 0
 schwere_jaeger_exp = 0
@@ -219,13 +219,12 @@ def getPlanetID(attacked_planet):
                 planet["Coordinate"]["System"] == sys and
                 planet["Coordinate"]["Position"] == pos):
             if(str(celesttype) == str(3)):
-                r = requests.get(url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+                r = requests.get(
+                    url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
                 planet_moon = r.json()
                 return planet_moon["Result"]["Moon"]["ID"]
             else:
                 return planet["ID"]
-
-            
 
 
 def callBackFleet(call_back_ids):
@@ -289,8 +288,8 @@ def saveAllFleet(attacked_planet):
         ("speed", str(1)),
         ("galaxy", str(1)),
         ("system", str(461)),
-        ("position", str(7)),
-        ("mission", str(5)),
+        ("position", str(8)),
+        ("mission", str(4)),
         ("metal", str(metal)),
         ("crystal", str(crystal)),
         ("deuterium", str(deut))
@@ -373,7 +372,7 @@ def autoSave():
                         isUnderAttack()
                         time.sleep(3)
                 # Saven bei unter 123 Sekunden
-                if(arrival_time < 160 and attack["ID"] not in already_saved_ids):
+                if(arrival_time < 240 and attack["ID"] not in already_saved_ids):
                     if(not onlySpy(attack) or test_on):
                         already_saved_ids.append(attack["ID"])
                         saveAllFleet(attack["Destination"])

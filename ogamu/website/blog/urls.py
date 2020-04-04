@@ -4,4 +4,5 @@ from . import views
 app_name = 'blog'
 urlpatterns = [
     path('', views.index, name='index'),
+    path('timeline/',views.timeline_view, name='timeline')
 ]
