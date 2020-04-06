@@ -388,9 +388,12 @@ def autoSave():
 counter = 1
 while True:
     autoSave()
+    if(counter == 1):
+        for i in range(6):
+            startExpo()
     startExpo()
     print("Durchgang Nr.: "+str(counter))
     counter = counter + 1
     if(counter == 9999999):
         counter = 0
-    time.sleep(30)
+    time.sleep(120)
