@@ -1,3 +1,4 @@
+import operator
 import requests
 import time
 import schedule
@@ -67,22 +68,43 @@ def autoSave():
             var_defs.call_back_ids.clear()
 
 
-def search_attack(gal, enemy_sys, my_celest):
-    data = ogamu.get_galaxy_info(gal, enemy_sys)
-    if(ogamu.checkSlots()[0] == True):
-        for i in range(0, 15):
-            if(ogamu.checkSlots()[0] == True):
-                enemy_planet = data["Result"]["Planets"][i]
-                if not enemy_planet == None:
-                    if(enemy_planet["Inactive"] == True):
-                        if(enemy_planet["Vacation"] == False):
-                            if(enemy_planet["Administrator"] == False):
-                                if(enemy_planet["Banned"] == False):
-                                    if(enemy_planet["Player"]["Rank"] < settings.min_rank
-                                       and enemy_planet["Player"]["Rank"] > settings.max_rank):
-                                        pos = i+1
-                                        print("FOUND ONE TARGET!")
-                                        ogamu.spyEnemy(enemy_planet, my_celest)
+def attack_inactives():
+    global atkSess
+    number_of_attacks = ogamu.get_allowed_slots()
+    if(len(var_defs.all_spy_reports) < number_of_attacks):
+        number_of_attacks = len(var_defs.all_spy_reports)
+    ships = ogamu.get_all_ships(spySess.my_celest)
+    total_kt = ships['Result']['SmallCargo']
+    total_xer = ships['Result']['Cruiser']
+    celest_id = ogamu.get_celest_ID(spySess.my_celest)
+    if(number_of_attacks == 0):
+        print("Keine guten Scans gefunden!")
+    for i in range(number_of_attacks):
+        if((total_kt-settings.kleine_transporter_atk) >= 0 and (total_xer-settings.kreuzer_atk) >= 0):
+            total_kt = total_kt - settings.kleine_transporter_atk
+            total_xer = total_xer - settings.kreuzer_atk
+            my_fleet = var_defs.Fleet(0, 0, settings.kreuzer_atk, 0, 0, 0,
+                                      0, 0, settings.kleine_transporter_atk, 0, 0, 0, 0, 0, 0, 0, 0)
+            data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
+                                            var_defs.Missions.Attack.value, 10, 0, 0, 0)
+            my_fleet.send_fleet(celest_id, data)
+            print("Farm Sess: Angriff auf Inactiv!")
+    var_defs.all_spy_reports.clear()
+    spySess.is_running = False
+
+
+def is_good_spy_report(spy_report):
+    result = spy_report["Result"]
+    if(result["HasFleetInformation"] == True and result["HasDefensesInformation"] == True):
+        if(result["RocketLauncher"] == None and result["LightLaser"] == None and result["HeavyLaser"] == None and
+           result["GaussCannon"] == None and result["IonCannon"] == None and result["PlasmaTurret"] == None and
+           result["SmallShieldDome"] == None and result["LargeShieldDome"] == None and result["LightFighter"] == None and
+           result["HeavyFighter"] == None and result["Cruiser"] == None and result["Battleship"] == None and
+           result["Battlecruiser"] == None and result["Bomber"] == None and result["Destroyer"] == None and
+           result["SmallCargo"] == None and result["LargeCargo"] == None and result["ColonyShip"] == None and
+           result["Recycler"] == None and result["Reaper"] == None and result["Pathfinder"] == None):
+            return True
+    return False
 
 
 def check_all_spy_reports():
@@ -95,7 +117,12 @@ def check_all_spy_reports():
         report = ogamu.get_spy_report(gal, sys, pos)
         var_defs.all_spy_reports[i].res_ges = int(report["Result"]["Metal"])+int(
             report["Result"]["Crystal"])+int(report["Result"]["Deuterium"])
-        print(var_defs.all_spy_reports[i].res_ges)
+        if(not is_good_spy_report(report)):
+            del var_defs.all_spy_reports[i]
+    attack_inactives()
+    # Sorting by res_ges
+    var_defs.all_spy_reports.sort(
+        key=operator.attrgetter('res_ges'), reverse=True)
 
 
 def run_spy_session():
@@ -117,6 +144,7 @@ def run_spy_session():
                                     ogamu.spyEnemy(
                                         enemy_planet, spySess.my_celest)
             spySess.current_pos = spySess.current_pos + 1
+
             if(spySess.current_pos == 16):
                 spySess.current_pos = 1
                 spySess.current_sys = spySess.current_sys + 1
@@ -125,9 +153,11 @@ def run_spy_session():
                 if spySess.current_sys == spySess.last_sys:
                     spySess.is_running = False
                     print("Spy Session ist vorbei!")
-                    time.sleep(30)
+                    time.sleep(60)
                     check_all_spy_reports()
                     # Nach 30 Sekunden check alle SpyRepots
+        else:
+            print("Attack Session pausiert!: Nicht genug Slots")
 
 
 def setup_atk_session(gal, sys, pos, radius, moon=False):
@@ -139,10 +169,12 @@ def setup_atk_session(gal, sys, pos, radius, moon=False):
     spySess.gal = gal
     spySess.mon = moon
     spySess.my_celest = my_celest
-
-    # for sys_enemy in range(min, max):
-    #     search_attack(gal, sys_enemy, my_celest)
-    # return 0
+    spySess.is_running = True
+    ships = ogamu.get_all_ships(spySess.my_celest)
+    total_kt = ships["Result"]["SmallCargo"]
+    total_xer = ships["Result"]["Cruiser"]
+    if(not (total_kt-settings.kleine_transporter_atk) >= 0 and not (total_xer-settings.kreuzer_atk) >= 0):
+        spySess.is_running = False
 
 
 def gather_all_res(target_gal, target_sys, target_pos, moon=False):
@@ -193,27 +225,8 @@ def gather_all_res(target_gal, target_sys, target_pos, moon=False):
                         print("GATHER mit allen KT's und allen GT!")
 
 
-# gather_all_res(1, 460, 7, True)
-# gather_all_res(1, 460, 7, moon=True)
-# ogamu.log_out()
-# ogamu.log_in()
-# gal = 1
-# sys = 457
-# pos = 5
-# r = requests.get(
-#     url="http://127.0.0.1:8080/bot/espionage-report/"+str(gal)+"/"+str(sys)+"/"+str(pos))
-# data = r.json()
-# print(data)
-
-# setup_atk_session(1, 460, 7, 10, True)
-# counter = 0
-# while(True):
-#     print("Nr: "+str(counter))
-#     autoSave()
-#     startExpo()
-#     startExpo()
-#     startExpo()
-#     counter = counter + 1
-#     time.sleep(240)
-
-# print(ogamu.calc_around_gal(460, 42))
+setup_atk_session(1, 460, 7, 3, True)
+while spySess.is_running:
+    run_spy_session()
+    time.sleep(0.1)
+print("Attacks are done!")

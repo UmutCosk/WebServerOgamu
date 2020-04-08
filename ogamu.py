@@ -41,6 +41,12 @@ def isUnderAttack():
     return data["Result"]
 
 
+def get_allowed_slots():
+    r = requests.get(url="http://127.0.0.1:8080/bot/fleets/slots")
+    data = r.json()
+    return data["Result"]["Total"] - data["Result"]["InUse"] - settings.slots_reserviert
+
+
 def checkSlots():
     result_fleet = False
     result_exp = False
@@ -74,7 +80,6 @@ def get_coords(celest):
 
 def get_celest_ID(celestial):
     celest = None
-    print(celestial)
     celesttype = celestial["Coordinate"]["Type"]
     (gal, sys, pos) = get_coords(celestial)
     if(str(celesttype) == str(3)):
@@ -89,16 +94,16 @@ def get_celest_ID(celestial):
 
 
 def get_celest_by_pos(gal, sys, pos, moon=False):
-    celest = None
     if moon == False:
         r = requests.get(
             url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
+        return celest["Result"]
     else:
         r = requests.get(
             url="http://127.0.0.1:8080/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
-    return celest["Result"]
+        return celest["Result"]
 
 
 def setExpo(celest):
