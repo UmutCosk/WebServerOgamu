@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ogamu</title>
+</head>
+<form action=toggle_bot method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Bot an- oder ausschalten</legend>
+        <input id="bot_an" type="radio" name="bot_status" value="on" {{ bot_on }}>
+        <label>Bot an</label>
+        <input id="bot_aus" type="radio" name="bot_status" value="off" {{ bot_off }}>
+        <label>Bot aus</label>
+    </fieldset>
+    <input type="submit">
+</form>
+<!--        Status: {{result_status}}-->
+
+</body>
+</html>

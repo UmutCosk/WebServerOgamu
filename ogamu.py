@@ -1,54 +1,20 @@
+import var_defs
+import settings
 import requests
 import json
 import time
-import schedule
-from enum import Enum
-from random import randrange, uniform
-from threading import Timer
-
-# ------------Settings------------ #
-# ---General---#
-slots_reserviert = 3
-telegram = False
-test_on = False
-
-# ---Expeditions--- #
-expo_an = True
-kleine_transporter_exp = 0
-große_transporter_exp = 400
-spio_sonde_exp = 1
-leichte_jaeger_exp = 0
-schwere_jaeger_exp = 0
-kreuzer_exp = 0
-schlachtschiff_exp = 1
-reaper_exp = 1
-schlachtkreuzer_exp = 1
-pathfinder_exp = 1
-
-# ---Variables--- #
-already_saved_ids = []
-already_spied_ids = []
-call_back_ids = []
 
 
-class Ships(Enum):
-    LightFighter = "204"
-    HeavyFighter = "205"
-    Cruiser = "206"
-    Battleship = "207"
-    Battlecruiser = "215"
-    Bomber = "211"
-    Destroyer = "213"
-    Deathstar = "214"
-    SmallCargo = "202"
-    LargeCargo = "203"
-    ColonyShip = "208"
-    Recycler = "209"
-    EspionageProbe = "210"
-    SolarSatellite = "212"
-    Crawler = "217"
-    Reaper = "218"
-    Pathfinder = "219"
+def log_in():
+    r = requests.get(url="http://127.0.0.1:8080/bot/login")
+    data = r.json()
+    print("Logged in...")
+
+
+def log_out():
+    r = requests.get(url="http://127.0.0.1:8080/bot/logout")
+    data = r.json()
+    print("Logged out...")
 
 
 def telegram_bot_sendtext(bot_message):
@@ -70,161 +36,101 @@ def telegram_bot_sendtext(bot_message):
 def isUnderAttack():
     r = requests.get(url="http://127.0.0.1:8080/bot/is-under-attack")
     data = r.json()
-    if data["Result"] and telegram:
+    if data["Result"] and settings.telegram:
         telegram_bot_sendtext("Du wirst angegriffen!")
     return data["Result"]
 
 
-def startExpo():
-    if expo_an:
-        r = requests.get(url="http://127.0.0.1:8080/bot/planets")
-        planets = r.json()
-        for planet in planets["Result"]:
-            r = requests.get(url="http://127.0.0.1:8080/bot/fleets/slots")
-            data = r.json()
-
-            if(data["Result"]["InUse"] + slots_reserviert < data["Result"]["Total"]):
-                if(data["Result"]["ExpInUse"] < data["Result"]["ExpTotal"]):
-                    id_planet = planet["ID"]
-                    gal = planet["Coordinate"]["Galaxy"]
-                    sys = planet["Coordinate"]["System"]
-                    r = requests.get(
-                        url="http://127.0.0.1:8080/bot/planets/" +
-                        str(id_planet) +
-                        "/ships")
-                    ships = r.json()
-                    if(ships["Result"]["LargeCargo"] >= große_transporter_exp and
-                            ships["Result"]["SmallCargo"] >= kleine_transporter_exp and
-                            ships["Result"]["LightFighter"] >= leichte_jaeger_exp and
-                            ships["Result"]["EspionageProbe"] >= spio_sonde_exp and
-                            ships["Result"]["HeavyFighter"] >= schwere_jaeger_exp and
-                            ships["Result"]["Cruiser"] >= kreuzer_exp and
-                            ships["Result"]["Battleship"] >= schlachtschiff_exp and
-                            ships["Result"]["Reaper"] >= reaper_exp and
-                            ships["Result"]["Battlecruiser"] >= schlachtkreuzer_exp and
-                            ships["Result"]["Pathfinder"] >= pathfinder_exp):
-                        data = [
-                            ("ships", str(Ships.LargeCargo.value) + ',' +
-                             str(große_transporter_exp)),
-                            ("ships", str(Ships.SmallCargo.value) + ',' +
-                             str(kleine_transporter_exp)),
-                            ("ships", str(Ships.Battlecruiser.value) + ',' +
-                             str(schlachtkreuzer_exp)),
-                            ("ships", str(Ships.Battleship.value) + ',' +
-                             str(schlachtschiff_exp)),
-                            ("ships", str(Ships.Reaper.value) + ',' +
-                             str(reaper_exp)),
-                            ("ships", str(Ships.Pathfinder.value) + ',' +
-                             str(pathfinder_exp)),
-                            ("ships", str(Ships.EspionageProbe.value) + ',' +
-                             str(spio_sonde_exp)),
-                            ("ships", str(Ships.HeavyFighter.value) + ',' +
-                             str(schwere_jaeger_exp)),
-                            ("ships", str(Ships.LightFighter.value) + ',' +
-                             str(leichte_jaeger_exp)),
-                            ("ships", str(Ships.Cruiser.value) + ',' +
-                             str(kreuzer_exp)),
-                            ("speed", str(10)),
-                            ("galaxy", str(gal)),
-                            ("system", str(sys)),
-                            ("position", str(16)),
-                            ("mission", str(15)),
-                            ("metal", str(0)),
-                            ("crystal", str(0)),
-                            ("deuterium", str(0))
-                        ]
-
-                        r = requests.post(
-                            url="http://127.0.0.1:8080/bot/planets/" +
-                            str(id_planet) +
-                            "/send-fleet", data=data)
-                        data = r.json()
-                        print("EXPO GESENDET!")
-                        time.sleep(3)
-        r = requests.get(url="http://127.0.0.1:8080/bot/moons")
-        moons = r.json()
-        for moon in moons["Result"]:
-            r = requests.get(url="http://127.0.0.1:8080/bot/fleets/slots")
-            data = r.json()
-
-            if(data["Result"]["InUse"] + slots_reserviert < data["Result"]["Total"]):
-                if(data["Result"]["ExpInUse"] < data["Result"]["ExpTotal"]):
-                    id_moon = moon["ID"]
-                    gal = moon["Coordinate"]["Galaxy"]
-                    sys = moon["Coordinate"]["System"]
-                    r = requests.get(
-                        url="http://127.0.0.1:8080/bot/planets/" +
-                        str(id_moon) +
-                        "/ships")
-                    ships = r.json()
-                    if(ships["Result"]["LargeCargo"] >= große_transporter_exp and
-                            ships["Result"]["SmallCargo"] >= kleine_transporter_exp and
-                            ships["Result"]["LightFighter"] >= leichte_jaeger_exp and
-                            ships["Result"]["EspionageProbe"] >= spio_sonde_exp and
-                            ships["Result"]["HeavyFighter"] >= schwere_jaeger_exp and
-                            ships["Result"]["Cruiser"] >= kreuzer_exp and
-                            ships["Result"]["Battleship"] >= schlachtschiff_exp and
-                            ships["Result"]["Reaper"] >= reaper_exp and
-                            ships["Result"]["Battlecruiser"] >= schlachtkreuzer_exp and
-                            ships["Result"]["Pathfinder"] >= pathfinder_exp):
-                        data = [
-                            ("ships", str(Ships.LargeCargo.value) + ',' +
-                             str(große_transporter_exp)),
-                            ("ships", str(Ships.SmallCargo.value) + ',' +
-                             str(kleine_transporter_exp)),
-                            ("ships", str(Ships.Battlecruiser.value) + ',' +
-                             str(schlachtkreuzer_exp)),
-                            ("ships", str(Ships.Battleship.value) + ',' +
-                             str(schlachtschiff_exp)),
-                            ("ships", str(Ships.Reaper.value) + ',' +
-                             str(reaper_exp)),
-                            ("ships", str(Ships.Pathfinder.value) + ',' +
-                             str(pathfinder_exp)),
-                            ("ships", str(Ships.EspionageProbe.value) + ',' +
-                             str(spio_sonde_exp)),
-                            ("ships", str(Ships.HeavyFighter.value) + ',' +
-                             str(schwere_jaeger_exp)),
-                            ("ships", str(Ships.LightFighter.value) + ',' +
-                             str(leichte_jaeger_exp)),
-                            ("ships", str(Ships.Cruiser.value) + ',' +
-                             str(kreuzer_exp)),
-                            ("speed", str(10)),
-                            ("galaxy", str(gal)),
-                            ("system", str(sys)),
-                            ("position", str(16)),
-                            ("mission", str(15)),
-                            ("metal", str(0)),
-                            ("crystal", str(0)),
-                            ("deuterium", str(0))
-                        ]
-
-                        r = requests.post(
-                            url="http://127.0.0.1:8080/bot/planets/" +
-                            str(id_moon) +
-                            "/send-fleet", data=data)
-                        data = r.json()
-                        print("EXPO GESENDET!")
-                        time.sleep(3)
+def checkSlots():
+    result_fleet = False
+    result_exp = False
+    r = requests.get(url="http://127.0.0.1:8080/bot/fleets/slots")
+    data = r.json()
+    if(data["Result"]["InUse"] + settings.slots_reserviert < data["Result"]["Total"]):
+        result_fleet = True
+    if(data["Result"]["ExpInUse"] < data["Result"]["ExpTotal"]):
+        result_exp = True
+    return (result_fleet, result_exp)
 
 
-def getPlanetID(attacked_planet):
-    celesttype = attacked_planet["Type"]
-    gal = attacked_planet["Galaxy"]
-    sys = attacked_planet["System"]
-    pos = attacked_planet["Position"]
+def get_planets():
     r = requests.get(url="http://127.0.0.1:8080/bot/planets")
     planets = r.json()
-    for planet in planets["Result"]:
-        if(planet["Coordinate"]["Galaxy"] == gal and
-                planet["Coordinate"]["System"] == sys and
-                planet["Coordinate"]["Position"] == pos):
-            if(str(celesttype) == str(3)):
-                r = requests.get(
-                    url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
-                planet_moon = r.json()
-                return planet_moon["Result"]["Moon"]["ID"]
-            else:
-                return planet["ID"]
+    return planets["Result"]
+
+
+def get_moons():
+    r = requests.get(url="http://127.0.0.1:8080/bot/moons")
+    moons = r.json()
+    return moons["Result"]
+
+
+def get_coords(celest):
+    gal = celest["Coordinate"]["Galaxy"]
+    sys = celest["Coordinate"]["System"]
+    pos = celest["Coordinate"]["Position"]
+    return (gal, sys, pos)
+
+
+def get_celest_ID(celestial):
+    celest = None
+    print(celestial)
+    celesttype = celestial["Coordinate"]["Type"]
+    (gal, sys, pos) = get_coords(celestial)
+    if(str(celesttype) == str(3)):
+        r = requests.get(
+            url="http://127.0.0.1:8080/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    else:
+        r = requests.get(
+            url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    return celest["Result"]["ID"]
+
+
+def get_celest_by_pos(gal, sys, pos, moon=False):
+    celest = None
+    if moon == False:
+        r = requests.get(
+            url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    else:
+        r = requests.get(
+            url="http://127.0.0.1:8080/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    return celest["Result"]
+
+
+def setExpo(celest):
+    id_celest = celest["ID"]
+    (gal, sys, pos) = get_coords(celest)
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/planets/" +
+        str(id_celest) +
+        "/ships")
+    ships = r.json()
+    if(ships["Result"]["LargeCargo"] >= settings.große_transporter_exp and
+            ships["Result"]["SmallCargo"] >= settings.kleine_transporter_exp and
+            ships["Result"]["LightFighter"] >= settings.leichte_jaeger_exp and
+            ships["Result"]["EspionageProbe"] >= settings.spio_sonde_exp and
+            ships["Result"]["HeavyFighter"] >= settings.schwere_jaeger_exp and
+            ships["Result"]["Cruiser"] >= settings.kreuzer_exp and
+            ships["Result"]["Battleship"] >= settings.schlachtschiff_exp and
+            ships["Result"]["Reaper"] >= settings.reaper_exp and
+            ships["Result"]["Battlecruiser"] >= settings.schlachtkreuzer_exp and
+            ships["Result"]["Pathfinder"] >= settings.pathfinder_exp):
+        fleet = var_defs.Fleet(settings.leichte_jaeger_exp, settings.schwere_jaeger_exp, settings.kreuzer_exp,
+                               settings.schlachtschiff_exp, settings.schlachtkreuzer_exp, 0, 0, 0,
+                               settings.kleine_transporter_exp, settings.große_transporter_exp, 0, 0,
+                               settings.spio_sonde_exp, 0, 0, settings.reaper_exp, settings.pathfinder_exp)
+        data = fleet.fill_fleet_data(
+            gal, sys, 16, var_defs.Missions.Expedition.value, 10, 0, 0, 0)
+        r = requests.post(
+            url="http://127.0.0.1:8080/bot/planets/" +
+            str(id_celest) +
+            "/send-fleet", data=data)
+        print("EXPO GESENDET!")
+        time.sleep(3)
 
 
 def callBackFleet(call_back_ids):
@@ -235,76 +141,6 @@ def callBackFleet(call_back_ids):
                 str(id) +
                 "/cancel")
             print("Fleet zurück gerufen nach SAFE!")
-            time.sleep(3)
-
-
-def saveAllFleet(attacked_planet):
-    id_planet = getPlanetID(attacked_planet)
-    r = requests.get(
-        url="http://127.0.0.1:8080/bot/planets/"+str(id_planet)+"/resources")
-    planet = r.json()
-
-    # Ressis
-    metal = planet["Result"]["Metal"]
-    crystal = planet["Result"]["Crystal"]
-    deut = planet["Result"]["Deuterium"]
-    # Schiffe
-    r = requests.get(
-        url="http://127.0.0.1:8080/bot/planets/" +
-        str(id_planet) +
-        "/ships")
-    ships = r.json()
-    data = [
-        ("ships", str(Ships.LargeCargo.value) + ',' +
-         str(ships["Result"]["LargeCargo"])),
-        ("ships", str(Ships.SmallCargo.value) + ',' +
-         str(ships["Result"]["SmallCargo"])),
-        ("ships", str(Ships.Battlecruiser.value) + ',' +
-         str(ships["Result"]["Battlecruiser"])),
-        ("ships", str(Ships.Battleship.value) + ',' +
-         str(ships["Result"]["Battleship"])),
-        ("ships", str(Ships.Reaper.value) + ',' +
-         str(ships["Result"]["Reaper"])),
-        ("ships", str(Ships.Pathfinder.value) + ',' +
-         str(ships["Result"]["Pathfinder"])),
-        ("ships", str(Ships.EspionageProbe.value) + ',' +
-         str(ships["Result"]["EspionageProbe"])),
-        ("ships", str(Ships.HeavyFighter.value) + ',' +
-         str(ships["Result"]["HeavyFighter"])),
-        ("ships", str(Ships.LightFighter.value) + ',' +
-         str(ships["Result"]["LightFighter"])),
-        ("ships", str(Ships.Cruiser.value) + ',' +
-         str(ships["Result"]["Cruiser"])),
-        ("ships", str(Ships.Recycler.value) + ',' +
-         str(ships["Result"]["Recycler"])),
-        ("ships", str(Ships.ColonyShip.value) + ',' +
-         str(ships["Result"]["ColonyShip"])),
-        ("ships", str(Ships.Destroyer.value) + ',' +
-         str(ships["Result"]["Destroyer"])),
-        ("ships", str(Ships.Deathstar.value) + ',' +
-         str(ships["Result"]["Deathstar"])),
-        ("ships", str(Ships.Bomber.value) + ',' +
-         str(ships["Result"]["Bomber"])),
-        ("speed", str(1)),
-        ("galaxy", str(1)),
-        ("system", str(461)),
-        ("position", str(8)),
-        ("mission", str(4)),
-        ("metal", str(metal)),
-        ("crystal", str(crystal)),
-        ("deuterium", str(deut))
-    ]
-
-    r = requests.post(
-        url="http://127.0.0.1:8080/bot/planets/" +
-        str(id_planet) +
-        "/send-fleet", data=data)
-    data = r.json()
-    if(not data["Status"] == 'error'):
-        call_back_ids.append(data["Result"]["ID"])
-        print("SEND FOR SAVE")
-    else:
-        print("YOU DON'T HAVE ANY SHIPS!")
 
 
 def onlySpy(attack):
@@ -328,72 +164,95 @@ def onlySpy(attack):
     return False
 
 
-def spyEnemy(enemy_planet, planet):
-    id_planet = getPlanetID(planet)
-    gal = enemy_planet["Galaxy"]
-    sys = enemy_planet["System"]
-    pos = enemy_planet["Position"]
-    data = [
-        ("ships", str(Ships.EspionageProbe.value) + ',' +
-         str(1)),
-        ("speed", str(10)),
-        ("galaxy", str(gal)),
-        ("system", str(sys)),
-        ("position", str(pos)),
-        ("mission", str(6)),
-        ("metal", str(0)),
-        ("crystal", str(0)),
-        ("deuterium", str(0))
-    ]
-
-    r = requests.post(
-        url="http://127.0.0.1:8080/bot/planets/" +
-        str(id_planet) +
-        "/send-fleet", data=data)
+def get_galaxy_info(gal, sys):
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/galaxy-infos/"+str(gal)+"/"+str(sys))
     data = r.json()
-    print("ENEMY SPIED BACK")
+    return data
 
 
-def autoSave():
+def get_all_ships(celest):
+    id_celest = celest["ID"]
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/planets/" +
+        str(id_celest) +
+        "/ships")
+    ships = r.json()
+    return ships
+
+
+def get_all_attacks():
     r = requests.get(url="http://127.0.0.1:8080/bot/attacks")
     data = r.json()
     attacks = data["Result"]
-    if attacks is not None:
-        if(len(attacks) > 0):
-            for attack in attacks:
-                arrival_time = attack["ArriveIn"]
-                print("arrival time: "+str(arrival_time))
-                # Zurück spionieren bei unter 1234 Sekunden
-                print(attack)
-                if (attack["ID"] not in already_spied_ids and arrival_time < 2345):
-                    if(not onlySpy(attack) or test_on):
-                        already_spied_ids.append(attack["ID"])
-                        spyEnemy(attack["Origin"], attack["Destination"])
-                        isUnderAttack()
-                        time.sleep(3)
-                # Saven bei unter 123 Sekunden
-                if(arrival_time < 240 and attack["ID"] not in already_saved_ids):
-                    if(not onlySpy(attack) or test_on):
-                        already_saved_ids.append(attack["ID"])
-                        saveAllFleet(attack["Destination"])
-                        isUnderAttack()
-                        time.sleep(3)
-        else:
-            callBackFleet(call_back_ids)
-            already_saved_ids.clear()
-            already_spied_ids.clear()
-            call_back_ids.clear()
+    return attacks
+
+# def get_id_by_coords(g):
+#     for planet in get_planets():
 
 
-counter = 1
-while True:
-    autoSave()
-    if(counter == 1):
-        for i in range(6):
-            startExpo()
-    startExpo()
-    print("Durchgang Nr.: "+str(counter))
-    counter = counter + 1
-    if(counter == 9999999):
-        counter = 0
-    time.sleep(120)
+def get_celest_ressis(celest):
+    id_celest = get_celest_ID(celest)
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/planets/"+str(id_celest)+"/resources")
+    celest = r.json()
+    met = celest["Result"]["Metal"]
+    crys = celest["Result"]["Crystal"]
+    deut = celest["Result"]["Deuterium"]
+    return (met, crys, deut)
+
+
+# ogame.GetEspionageReportHandler)
+# 	e.GET("/bot/espionage-report/:galaxy/:system/:position", ogame.GetEspionageReportForHandler)
+# 	e.GET("/bot/espionage-report", ogame.GetEspionageReportMessagesHandler)
+# 	e.POST("/bot/delete-report/:messageID", ogame.DeleteMessageHandler)
+# 	e.POST("/bot/delete-all-espionage-reports", ogame.DeleteEspionageMessagesHandler)
+# 	e.POST("/bot/delete-all-reports/:tabIndex",
+def spyEnemy(enemy_planet, my_celest):
+    id_celest = get_celest_ID(my_celest)
+    (gal, sys, pos) = get_coords(enemy_planet)
+    spy_report = var_defs.SpyReports(0, gal, sys, pos)
+    var_defs.all_spy_reports.append(spy_report)
+    fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, settings.spy_for_farming, 0, 0, 0, 0)
+    data = fleet.fill_fleet_data(
+        gal, sys, pos, var_defs.Missions.Spy.value, 10, 0, 0, 0)
+    data = fleet.send_fleet(id_celest, data)
+    print("Enemy spied!")
+
+
+def calc_around_gal(sys, radius):
+    min = sys-radius
+    max = sys+radius
+    min_temp = 0
+    max_temp = 0
+    if(max > 499):
+        max_result = max - 499
+    else:
+        max_result = max
+    if(min < 1):
+        min_result = 499 + min
+    else:
+        min_result = min
+    return (min_result, max_result)
+
+
+def get_research():
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/get-research")
+    research = r.json()
+    return research["Result"]
+
+
+def calc_cargo_kapa(kt, gt):
+    research = get_research()
+    hyper = research["HyperspaceTechnology"]
+    kapa_kt = 0.05*int(hyper)*5000 + 5000
+    kapa_gt = 0.05*int(hyper)*25000+25000
+    return (kapa_kt*kt, kapa_gt*gt, kapa_kt, kapa_gt)
+
+
+def get_spy_report(gal, sys, pos):
+    r = requests.get(
+        url="http://127.0.0.1:8080/bot/espionage-report/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+    return r.json()

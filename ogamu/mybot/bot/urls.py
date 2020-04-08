@@ -3,6 +3,6 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('add', views.add, name='add')
+    path('toggle_bot', views.toggle_bot, name='toggle_bot')
 
 ]
