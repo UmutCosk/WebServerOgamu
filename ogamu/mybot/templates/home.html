@@ -4,19 +4,68 @@
     <meta charset="UTF-8">
     <title>Ogamu</title>
 </head>
+ <fieldset>
+     <output name="output"><h3>{{output_text}}</h3></output>
+ </fieldset>
 <form action=toggle_bot method="post">
     {% csrf_token %}
 <!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
     <fieldset>
         <legend>Bot an- oder ausschalten</legend>
-        <input id="bot_an" type="radio" name="bot_status" value="on" {{ bot_on }}>
+        <input id="bot_an" type="radio" name="bot_status" value="bot_an" {% if bot_on %} checked {% endif %}>
         <label>Bot an</label>
-        <input id="bot_aus" type="radio" name="bot_status" value="off" {{ bot_off }}>
+        <input id="bot_aus" type="radio" name="bot_status" value="bot_aus" {% if not bot_on %} checked {% endif %}>
         <label>Bot aus</label>
     </fieldset>
     <input type="submit">
 </form>
-<!--        Status: {{result_status}}-->
+<form action=collect method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Collect Ressis</legend>
+        <label>Ziel Gala:</label>
+        <input type="number" name="collect1" ,value="gal">
+        <label>Ziel Sys:</label>
+        <input type="number" name="collect2" ,value="sys">
+        <label>Ziel Pos:</label>
+        <input type="number" name="collect3" ,value="sys">
+        <label>Mond?:</label>
+        <input type="checkbox" name="collect4">
+    </fieldset>
+    <input type="submit" value="Sammeln">
+</form>
+<form action=set_expo method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Expo Settings</legend>
+        <label>K.Transis:</label>
+        <input type="number" name="exp_kt" value={{ kt_exp }}>
+        <label>Gr. Transis:</label>
+        <input type="number" name="exp_gt" value={{ gt_exp }}>
+        <label>L. Jäger:</label>
+        <input  type="number" name="exp_lj" value={{ lj_exp }}>
+        <label>S. Jäger:</label>
+        <input type="number" name="exp_sj" value={{ sj_exp }}>
+        <label>Kreuzer:</label>
+        <input type="number" name="exp_xer" value={{ xer_exp }}>
+        <label>S.Schiff:</label>
+        <input type="number" name="exp_ss" value={{ ss_exp }}>
+        <label>S.Kreuzer:</label>
+        <input type="number" name="exp_sxer" value={{ sxer_exp }}>
+        <label>Reaper:</label>
+        <input type="number" name="exp_reaper" value={{ reaper_exp }}>
+        <label>Spio.Sonden:</label>
+        <input type="number" name="exp_spy" value={{ spy_exp }}>
+        <label>Pathfinder:</label>
+        <input type="number" name="exp_path" value={{ path_exp }}>
+        <label>Expo an?:</label>
+        <input type="checkbox" name="exp_an" {% if exp_an_exp %} checked{% endif %}>
+    </fieldset>
+    <input type="submit" name="speichern" value ="Speichern">
+    <input type="submit" name="manuel_senden" value ="Manuell Senden">
+</form>
 
 </body>
 </html>

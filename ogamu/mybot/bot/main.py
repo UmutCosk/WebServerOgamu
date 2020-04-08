@@ -3,9 +3,9 @@ import time
 import schedule
 from random import randrange, uniform
 from threading import Timer
-import var_defs
-import settings
-import ogamu
+from . import var_defs
+from . import settings
+from . import ogamu
 
 spySess = var_defs.AttackSession(0, 0, 0, False, None)
 
@@ -65,24 +65,6 @@ def autoSave():
             var_defs.already_saved_ids.clear()
             var_defs.already_spied_ids.clear()
             var_defs.call_back_ids.clear()
-
-
-def search_attack(gal, enemy_sys, my_celest):
-    data = ogamu.get_galaxy_info(gal, enemy_sys)
-    if(ogamu.checkSlots()[0] == True):
-        for i in range(0, 15):
-            if(ogamu.checkSlots()[0] == True):
-                enemy_planet = data["Result"]["Planets"][i]
-                if not enemy_planet == None:
-                    if(enemy_planet["Inactive"] == True):
-                        if(enemy_planet["Vacation"] == False):
-                            if(enemy_planet["Administrator"] == False):
-                                if(enemy_planet["Banned"] == False):
-                                    if(enemy_planet["Player"]["Rank"] < settings.min_rank
-                                       and enemy_planet["Player"]["Rank"] > settings.max_rank):
-                                        pos = i+1
-                                        print("FOUND ONE TARGET!")
-                                        ogamu.spyEnemy(enemy_planet, my_celest)
 
 
 def check_all_spy_reports():
