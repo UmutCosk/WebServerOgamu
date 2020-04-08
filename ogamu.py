@@ -138,6 +138,10 @@ def setExpo(celest):
         time.sleep(3)
 
 
+def delete_all_spy_reports():
+    requests.post(url="http://127.0.0.1:8080/bot/delete-all-espionage-reports")
+
+
 def callBackFleet(call_back_ids):
     if len(call_back_ids) > 0:
         for id in call_back_ids:
@@ -255,6 +259,14 @@ def calc_cargo_kapa(kt, gt):
     kapa_kt = 0.05*int(hyper)*5000 + 5000
     kapa_gt = 0.05*int(hyper)*25000+25000
     return (kapa_kt*kt, kapa_gt*gt, kapa_kt, kapa_gt)
+
+
+def get_cargo_kapa(kt, gt):
+    research = get_research()
+    hyper = research["HyperspaceTechnology"]
+    kapa_kt = 0.05*int(hyper)*5000 + 5000
+    kapa_gt = 0.05*int(hyper)*25000+25000
+    return (kapa_kt, kapa_gt)
 
 
 def get_spy_report(gal, sys, pos):

@@ -19,8 +19,8 @@ pathfinder_exp = 1
 
 # ---Farming--- #
 farming_an = True
-kleine_transporter_atk = 15
-kreuzer_atk = 2
-spy_for_farming = 2
+spy_for_farming = 3
+check_spy = 30
+check_kt = 50
 min_rank = 4000
 max_rank = 100

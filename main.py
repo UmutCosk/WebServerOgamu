@@ -79,18 +79,29 @@ def attack_inactives():
     celest_id = ogamu.get_celest_ID(spySess.my_celest)
     if(number_of_attacks == 0):
         print("Keine guten Scans gefunden!")
+    (kt_kapa, gt_kapa) = ogamu.get_cargo_kapa()
     for i in range(number_of_attacks):
-        if((total_kt-settings.kleine_transporter_atk) >= 0 and (total_xer-settings.kreuzer_atk) >= 0):
-            total_kt = total_kt - settings.kleine_transporter_atk
-            total_xer = total_xer - settings.kreuzer_atk
-            my_fleet = var_defs.Fleet(0, 0, settings.kreuzer_atk, 0, 0, 0,
-                                      0, 0, settings.kleine_transporter_atk, 0, 0, 0, 0, 0, 0, 0, 0)
-            data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
-                                            var_defs.Missions.Attack.value, 10, 0, 0, 0)
-            my_fleet.send_fleet(celest_id, data)
-            print("Farm Sess: Angriff auf Inactiv!")
+        number_kt = round((var_defs.all_spy_reports[i].res_ges / kt_kapa))
+        if(number_kt < total_kt):
+            total_kt = total_kt - number_kt
+        elif (number_kt > total_kt):
+            number_kt = total_kt
+            total_kt = 0
+        my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
+                                  0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
+        data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
+                                        var_defs.Missions.Attack.value, 10, 0, 0, 0)
+        my_fleet.send_fleet(celest_id, data)
+        print("Farm Sess: Angriff auf Inactiv! an: "+str(gal)+":" +
+              str(sys)+":"+str(pos)+" , mit KT's: "+str(number_kt)+" , mit GesRes:"+str(var_defs.all_spy_reports[i].res_ges))
+        if total_kt == 0:
+            spySess.is_running = False
+            var_defs.all_spy_reports.clear()
+            ogamu.delete_all_spy_reports()
+            return
     var_defs.all_spy_reports.clear()
     spySess.is_running = False
+    ogamu.delete_all_spy_reports()
 
 
 def is_good_spy_report(spy_report):
@@ -163,18 +174,25 @@ def run_spy_session():
 def setup_atk_session(gal, sys, pos, radius, moon=False):
     global spySess
     my_celest = ogamu.get_celest_by_pos(gal, sys, pos, moon)
+    spySess.my_celest = my_celest
+    ships = ogamu.get_all_ships(spySess.my_celest)
+    total_kt = ships["Result"]["SmallCargo"]
+    total_spy = ships["Result"]["EspionageProbe"]
+    if(total_kt < settings.check_kt):
+        print("Zu wenig Kleine Transis!!")
+        spySess.is_running = False
+        return
+    if(total_spy < settings.check_spy):
+        print("Zu wenig Spio Sonden!!")
+        spySess.is_running = False
+        return
     (min, max) = ogamu.calc_around_gal(sys, radius)
     spySess.current_sys = min
     spySess.last_sys = max
     spySess.gal = gal
     spySess.mon = moon
-    spySess.my_celest = my_celest
     spySess.is_running = True
-    ships = ogamu.get_all_ships(spySess.my_celest)
-    total_kt = ships["Result"]["SmallCargo"]
-    total_xer = ships["Result"]["Cruiser"]
-    if(not (total_kt-settings.kleine_transporter_atk) >= 0 and not (total_xer-settings.kreuzer_atk) >= 0):
-        spySess.is_running = False
+    print("Atk. Session gestartet von P: "+str(gal)+":"+str(sys)+":"+str(pos))
 
 
 def gather_all_res(target_gal, target_sys, target_pos, moon=False):
@@ -225,7 +243,11 @@ def gather_all_res(target_gal, target_sys, target_pos, moon=False):
                         print("GATHER mit allen KT's und allen GT!")
 
 
-setup_atk_session(1, 460, 7, 3, True)
+setup_atk_session(1, 159, 8, 10, False)
+while spySess.is_running:
+    run_spy_session()
+    time.sleep(0.1)
+setup_atk_session(1, 327, 9, 10, False)
 while spySess.is_running:
     run_spy_session()
     time.sleep(0.1)
