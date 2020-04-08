@@ -1,0 +1,1 @@
+web: gunicorn Ogamu.wsgi --log-file
