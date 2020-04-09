@@ -6,13 +6,13 @@ import time
 
 
 def log_in():
-    r = requests.get(url="http://127.0.0.1:8080/bot/login")
+    r = requests.get(url="http://"+settings.adress+"/bot/login")
     data = r.json()
     print("Logged in...")
 
 
 def log_out():
-    r = requests.get(url="http://127.0.0.1:8080/bot/logout")
+    r = requests.get(url="http://"+settings.adress+"/bot/logout")
     data = r.json()
     print("Logged out...")
 
@@ -34,17 +34,23 @@ def telegram_bot_sendtext(bot_message):
 
 
 def isUnderAttack():
-    r = requests.get(url="http://127.0.0.1:8080/bot/is-under-attack")
+    r = requests.get(url="http://"+settings.adress+"/bot/is-under-attack")
     data = r.json()
     if data["Result"] and settings.telegram:
         telegram_bot_sendtext("Du wirst angegriffen!")
     return data["Result"]
 
 
+def get_allowed_slots():
+    r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
+    data = r.json()
+    return data["Result"]["Total"] - data["Result"]["InUse"] - settings.slots_reserviert
+
+
 def checkSlots():
     result_fleet = False
     result_exp = False
-    r = requests.get(url="http://127.0.0.1:8080/bot/fleets/slots")
+    r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
     if(data["Result"]["InUse"] + settings.slots_reserviert < data["Result"]["Total"]):
         result_fleet = True
@@ -54,13 +60,13 @@ def checkSlots():
 
 
 def get_planets():
-    r = requests.get(url="http://127.0.0.1:8080/bot/planets")
+    r = requests.get(url="http://"+settings.adress+"/bot/planets")
     planets = r.json()
     return planets["Result"]
 
 
 def get_moons():
-    r = requests.get(url="http://127.0.0.1:8080/bot/moons")
+    r = requests.get(url="http://"+settings.adress+"/bot/moons")
     moons = r.json()
     return moons["Result"]
 
@@ -78,33 +84,35 @@ def get_celest_ID(celestial):
     (gal, sys, pos) = get_coords(celestial)
     if(str(celesttype) == str(3)):
         r = requests.get(
-            url="http://127.0.0.1:8080/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+            url="http://"+settings.adress+"/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
     else:
         r = requests.get(
-            url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+            url="http://"+settings.adress+"/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
     return celest["Result"]["ID"]
 
 
 def get_celest_by_pos(gal, sys, pos, moon=False):
-    celest = None
+    print(gal, sys, pos, moon)
     if moon == False:
         r = requests.get(
-            url="http://127.0.0.1:8080/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+            url="http://"+settings.adress+"/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
+        print(r)
+        return celest["Result"]
     else:
         r = requests.get(
-            url="http://127.0.0.1:8080/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+            url="http://"+settings.adress+"/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
-    return celest["Result"]
+        return celest["Result"]
 
 
 def setExpo(celest):
     id_celest = celest["ID"]
     (gal, sys, pos) = get_coords(celest)
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/planets/" +
+        url="http://"+settings.adress+"/bot/planets/" +
         str(id_celest) +
         "/ships")
     ships = r.json()
@@ -125,18 +133,23 @@ def setExpo(celest):
         data = fleet.fill_fleet_data(
             gal, sys, 16, var_defs.Missions.Expedition.value, 10, 0, 0, 0)
         r = requests.post(
-            url="http://127.0.0.1:8080/bot/planets/" +
+            url="http://"+settings.adress+"/bot/planets/" +
             str(id_celest) +
             "/send-fleet", data=data)
         print("EXPO GESENDET!")
         time.sleep(3)
 
 
+def delete_all_spy_reports():
+    requests.post(url="http://"+settings.adress +
+                  "/bot/delete-all-espionage-reports")
+
+
 def callBackFleet(call_back_ids):
     if len(call_back_ids) > 0:
         for id in call_back_ids:
             requests.post(
-                url="http://127.0.0.1:8080/bot/fleets/" +
+                url="http://"+settings.adress+"/bot/fleets/" +
                 str(id) +
                 "/cancel")
             print("Fleet zurück gerufen nach SAFE!")
@@ -165,7 +178,7 @@ def onlySpy(attack):
 
 def get_galaxy_info(gal, sys):
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/galaxy-infos/"+str(gal)+"/"+str(sys))
+        url="http://"+settings.adress+"/bot/galaxy-infos/"+str(gal)+"/"+str(sys))
     data = r.json()
     return data
 
@@ -173,7 +186,7 @@ def get_galaxy_info(gal, sys):
 def get_all_ships(celest):
     id_celest = celest["ID"]
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/planets/" +
+        url="http://"+settings.adress+"/bot/planets/" +
         str(id_celest) +
         "/ships")
     ships = r.json()
@@ -181,7 +194,7 @@ def get_all_ships(celest):
 
 
 def get_all_attacks():
-    r = requests.get(url="http://127.0.0.1:8080/bot/attacks")
+    r = requests.get(url="http://"+settings.adress+"/bot/attacks")
     data = r.json()
     attacks = data["Result"]
     return attacks
@@ -193,7 +206,7 @@ def get_all_attacks():
 def get_celest_ressis(celest):
     id_celest = get_celest_ID(celest)
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/planets/"+str(id_celest)+"/resources")
+        url="http://"+settings.adress+"/bot/planets/"+str(id_celest)+"/resources")
     celest = r.json()
     met = celest["Result"]["Metal"]
     crys = celest["Result"]["Crystal"]
@@ -238,7 +251,7 @@ def calc_around_gal(sys, radius):
 
 def get_research():
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/get-research")
+        url="http://"+settings.adress+"/bot/get-research")
     research = r.json()
     return research["Result"]
 
@@ -251,7 +264,15 @@ def calc_cargo_kapa(kt, gt):
     return (kapa_kt*kt, kapa_gt*gt, kapa_kt, kapa_gt)
 
 
+def get_cargo_kapa():
+    research = get_research()
+    hyper = research["HyperspaceTechnology"]
+    kapa_kt = 0.05*int(hyper)*5000 + 5000
+    kapa_gt = 0.05*int(hyper)*25000+25000
+    return (kapa_kt, kapa_gt)
+
+
 def get_spy_report(gal, sys, pos):
     r = requests.get(
-        url="http://127.0.0.1:8080/bot/espionage-report/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        url="http://"+settings.adress+"/bot/espionage-report/"+str(gal)+"/"+str(sys)+"/"+str(pos))
     return r.json()

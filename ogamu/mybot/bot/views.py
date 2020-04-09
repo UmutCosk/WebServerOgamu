@@ -6,8 +6,11 @@ import schedule
 import time
 from . import main
 from . import settings
+from . import var_defs
 from django.http import HttpResponse
-
+from django.contrib.auth.models import User, auth
+from django.shortcuts import render,redirect
+from django.contrib import messages
 
 bot_is_on = False
 scheduler = BackgroundScheduler()
@@ -15,6 +18,11 @@ job_autosave = None
 job_expo = None
 text_id = 0
 output_msg = ""
+
+
+
+def login(request):
+    return render(request, 'login.html')
 
 def output_text(text):
     global output_msg
@@ -29,6 +37,9 @@ def autosave_tick():
 def expo_tick():
     main.startExpo()
     print("Running expo...")
+
+def farm_tick():
+    print("Running farm...")
 
 
 def start_job():
@@ -47,17 +58,17 @@ def stop_job():
     scheduler.remove_job('autosave')
     scheduler.remove_job('expo')
 
-
 def home(request):
-    global bot_is_on
-    return render(request, 'home.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
-                                         'gt_exp': settings.große_transporter_exp
-        , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
-        , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
-                                         'reaper_exp': settings.reaper_exp
-        , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg})
+    return render(request, 'bot/home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
+                                             'gt_exp': settings.große_transporter_exp
+            , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
+            , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
+                                             'reaper_exp': settings.reaper_exp
+            , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
+            , 'output_text': output_msg})
 
+
+#
 
 
 
@@ -77,7 +88,7 @@ def toggle_bot(request):
             output_text("Bot ist aus!")
         else:
             output_text("Bot ist bereits aus!")
-    return render(request, 'home.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
+    return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                          'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
@@ -114,7 +125,7 @@ def collect(request):
     else:
         output_text("Sammeln geht nicht! -> Bot ist aus!")
 
-    return render(request, 'home.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
+    return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                          'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
@@ -160,12 +171,58 @@ def set_expo(request):
     else:
         output_text("Error: Bot ist aus!")
 
-    return render(request, 'home.html',   {'bot_on': bot_is_on,'kt_exp': settings.kleine_transporter_exp, 'gt_exp':settings.große_transporter_exp
+    return render(request, 'home_norma.html',   {'bot_on': bot_is_on,'kt_exp': settings.kleine_transporter_exp, 'gt_exp':settings.große_transporter_exp
         ,'lj_exp': settings.leichte_jaeger_exp,'sj_exp':settings.schwere_jaeger_exp,'xer_exp':settings.kreuzer_exp
         ,'ss_exp': settings.schlachtschiff_exp ,'sxer_exp': settings.schlachtkreuzer_exp,'reaper_exp':settings.reaper_exp
         ,'spy_exp': settings.spio_sonde_exp,'path_exp':settings.pathfinder_exp,'exp_an_exp': settings.expo_an
         ,'output_text' : output_msg})
 
+def farming(request):
+    if(not(request.POST['farm_gal_1'] == "" or request.POST['farm_sys_1'] == "" or request.POST['farm_pos_1'] == "")):
+        if int(request.POST['farm_gal_1']) >= 1 and int(request.POST['farm_gal_1']) <= 6:
+            if int(request.POST['farm_sys_1']) >= 1 and int(request.POST['farm_sys_1']) <= 499:
+                if int(request.POST['farm_pos_1']) >= 1 and int(request.POST['farm_pos_1']) <= 15:
+                    var_defs.farmPlani1.gal = request.POST['farm_gal_1']
+                    var_defs.farmPlani1.sys = request.POST['farm_sys_1']
+                    var_defs.farmPlani1.pos = request.POST['farm_pos_1']
+                    var_defs.farmPlani1.use = True
+    else:
+        var_defs.farmPlani1.use = False
 
+    if (not (request.POST['farm_gal_2'] == "" or request.POST['farm_sys_2'] == "" or request.POST['farm_pos_2'] == "")):
+        if int(request.POST['farm_gal_2']) >= 1 and int(request.POST['farm_gal_2']) <= 6:
+            if int(request.POST['farm_sys_2']) >= 1 and int(request.POST['farm_sys_2']) <= 499:
+                if int(request.POST['farm_pos_2']) >= 1 and int(request.POST['farm_pos_2']) <= 15:
+                    var_defs.farmPlani2.gal = request.POST['farm_gal_2']
+                    var_defs.farmPlani2.sys = request.POST['farm_sys_2']
+                    var_defs.farmPlani2.pos = request.POST['farm_pos_2']
+                    var_defs.farmPlani2.use = True
+    else:
+        var_defs.farmPlani2.use = False
+
+    if (not (request.POST['farm_gal_3'] == "" or request.POST['farm_sys_3'] == "" or request.POST['farm_pos_3'] == "")):
+        if int(request.POST['farm_gal_3']) >= 1 and int(request.POST['farm_gal_3']) <= 6:
+            if int(request.POST['farm_sys_3']) >= 1 and int(request.POST['farm_sys_3']) <= 499:
+                if int(request.POST['farm_pos_3']) >= 1 and int(request.POST['farm_pos_3']) <= 15:
+                    var_defs.farmPlani3.gal = request.POST['farm_gal_3']
+                    var_defs.farmPlani3.sys = request.POST['farm_sys_3']
+                    var_defs.farmPlani3.pos = request.POST['farm_pos_3']
+                    var_defs.farmPlani3.use = True
+    else:
+        var_defs.farmPlani3.use = False
+
+
+    if (request.POST.get('farm_on', False) == False):
+        settings.farming_an = False
+    else:
+        settings.farming_an = True
+
+    return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
+                                         'gt_exp': settings.große_transporter_exp
+        , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
+        , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
+                                         'reaper_exp': settings.reaper_exp
+        , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
+        , 'output_text': output_msg})
 
 

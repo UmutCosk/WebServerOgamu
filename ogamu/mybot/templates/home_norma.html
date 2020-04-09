@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ogamu</title>
+</head>
+<style>
+    ul {
+    padding: 7px;
+    background-color: #eee;
+    display: inline-block;
+    list-style-type: none;
+}
+input[type="number"] {
+   width:40px;
+}
+</style>
+ <fieldset>
+     <output name="output"><h3>{{output_text}}</h3></output>
+ </fieldset>
+<form action=toggle_bot method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Bot an- oder ausschalten</legend>
+        <input id="bot_an" type="radio" name="bot_status" value="bot_an" {% if bot_on %} checked {% endif %}>
+        <label>Bot an</label>
+        <input id="bot_aus" type="radio" name="bot_status" value="bot_aus" {% if not bot_on %} checked {% endif %}>
+        <label>Bot aus</label>
+    </fieldset>
+    <input type="submit">
+</form>
+<form action=collect method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Collect Ressis</legend>
+        <label>Mond?:</label>
+        <input type="checkbox" name="collect4">
+        <br>
+        <label>Ziel Gala:</label>
+        <input type="number" name="collect1" ,value="gal">
+        <label>Ziel Sys:</label>
+        <input type="number" name="collect2" ,value="sys">
+        <label>Ziel Pos:</label>
+        <input type="number" name="collect3" ,value="pos">
+
+    </fieldset>
+    <input type="submit" value="Sammeln">
+</form>
+<form action=set_expo method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Expo Settings</legend>
+        <label>Expo an?:</label>
+        <input type="checkbox" name="exp_an" {% if exp_an_exp %} checked{% endif %}>
+        <br>
+        <label>K.Transis:</label>
+        <input type="number" name="exp_kt" value={{ kt_exp }}>
+        <label>Gr. Transis:</label>
+        <input type="number" name="exp_gt" value={{ gt_exp }}>
+        <label>L. Jäger:</label>
+        <input  type="number" name="exp_lj" value={{ lj_exp }}>
+        <label>S. Jäger:</label>
+        <input type="number" name="exp_sj" value={{ sj_exp }}>
+        <label>Kreuzer:</label>
+        <input type="number" name="exp_xer" value={{ xer_exp }}>
+        <label>S.Schiff:</label>
+        <input type="number" name="exp_ss" value={{ ss_exp }}>
+        <label>S.Kreuzer:</label>
+        <input type="number" name="exp_sxer" value={{ sxer_exp }}>
+        <label>Reaper:</label>
+        <input type="number" name="exp_reaper" value={{ reaper_exp }}>
+        <label>Spio.Sonden:</label>
+        <input type="number" name="exp_spy" value={{ spy_exp }}>
+        <label>Pathfinder:</label>
+        <input type="number" name="exp_path" value={{ path_exp }}>
+    </fieldset>
+    <input type="submit" name="speichern" value ="Speichern">
+    <input type="submit" name="manuel_senden" value ="Manuell Senden">
+</form>
+<form action=farming method="post">
+    {% csrf_token %}
+<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
+    <fieldset>
+        <legend>Farm Planis</legend>
+         <label>Farm on?:</label>
+        <input type="checkbox" name="farm_on">
+        <br>
+       <ul>
+            <li><label>From Gal 1:</label>
+            <input type="number" name="farm_gal_1" ,value="gal1"></li>
+            <li><label>From Sys 1:</label>
+            <input type="number" name="farm_sys_1" ,value="sys1"></li>
+            <li><label>From Pos 1:</label>
+            <input type="number" name="farm_pos_1" ,value="pos1"></li>
+       </ul>
+        <ul>
+            <li><label>From Gal 2:</label>
+            <input type="number" name="farm_gal_2" ,value="gal2"></li>
+            <li> <label>From Sys 2:</label>
+            <input type="number" name="farm_sys_2" ,value="sys2"></li>
+            <li><label>From Pos 2:</label>
+            <input type="number" name="farm_pos_2" ,value="pos2"></li>
+        </ul>
+        <ul>
+            <li><label>From Gal 3:</label>
+            <input type="number" name="farm_gal_3" ,value="gal3"></li>
+            <li><label>From Sys 3:</label>
+            <input type="number" name="farm_sys_3" ,value="sys3"></li>
+            <li><label>From Pos 3:</label>
+            <input type="number" name="farm_pos_3" ,value="pos3"></li>
+        </ul>
+
+    </fieldset>
+    <input type="submit" value="Sammeln">
+</form>
+
+</body>
+</html>

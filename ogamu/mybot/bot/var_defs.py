@@ -1,6 +1,7 @@
 from enum import Enum
 import json
 import requests
+from . import settings
 
 # ---Variables--- #
 already_saved_ids = []
@@ -8,6 +9,18 @@ already_spied_ids = []
 call_back_ids = []
 all_spy_reports = []
 
+
+class FarmPlanets:
+    def __init__(self,gal,sys,pos,moon=False):
+        self.gal = gal
+        self.sys = sys
+        self.pos = pos
+        self.moon = moon
+        self.use = False
+
+farmPlani1 = FarmPlanets(1,1,1,False)
+farmPlani2 = FarmPlanets(1,1,1,False)
+farmPlani3 = FarmPlanets(1,1,1,False)
 
 class AttackSession:
     def __init__(self, sys_min, sys_max, gal, moon, my_celest):
@@ -159,7 +172,7 @@ class Fleet:
 
     def send_fleet(self, id_planet, data):
         r = requests.post(
-            url="http://127.0.0.1:8080/bot/planets/" +
+            url="http://"+settings.adress+"/bot/planets/" +
             str(id_planet) +
             "/send-fleet", data=data)
         return r.json()
