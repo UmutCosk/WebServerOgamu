@@ -55,7 +55,7 @@ def autoSave():
                         ogamu.isUnderAttack()
                         time.sleep(3)
                 # Saven bei unter 123 Sekunden
-                if(arrival_time < 600 and attack["ID"] not in var_defs.already_saved_ids):
+                if(arrival_time < 240 and attack["ID"] not in var_defs.already_saved_ids):
                     if(not ogamu.onlySpy(attack) or settings.test_on):
                         var_defs.already_saved_ids.append(attack["ID"])
                         saveAllFleet(attack["Destination"])
@@ -71,34 +71,42 @@ def autoSave():
 def attack_inactives():
     global atkSess
     number_of_attacks = ogamu.get_allowed_slots()
+    print(number_of_attacks)
     if(len(var_defs.all_spy_reports) < number_of_attacks):
         number_of_attacks = len(var_defs.all_spy_reports)
     ships = ogamu.get_all_ships(spySess.my_celest)
     total_kt = ships['Result']['SmallCargo']
-    total_xer = ships['Result']['Cruiser']
     celest_id = ogamu.get_celest_ID(spySess.my_celest)
     if(number_of_attacks == 0):
         print("Keine guten Scans gefunden!")
+        ogamu.log_out()
+        ogamu.log_in()
     (kt_kapa, gt_kapa) = ogamu.get_cargo_kapa()
+    print("Number of Attacks: "+str(number_of_attacks))
     for i in range(number_of_attacks):
-        number_kt = round((var_defs.all_spy_reports[i].res_ges / kt_kapa))
-        if(number_kt < total_kt):
-            total_kt = total_kt - number_kt
-        elif (number_kt > total_kt):
-            number_kt = total_kt
-            total_kt = 0
-        my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
-                                  0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
-        data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
-                                        var_defs.Missions.Attack.value, 10, 0, 0, 0)
-        my_fleet.send_fleet(celest_id, data)
-        print("Farm Sess: Angriff auf Inactiv! an: "+str(gal)+":" +
-              str(sys)+":"+str(pos)+" , mit KT's: "+str(number_kt)+" , mit GesRes:"+str(var_defs.all_spy_reports[i].res_ges))
-        if total_kt == 0:
-            spySess.is_running = False
-            var_defs.all_spy_reports.clear()
-            ogamu.delete_all_spy_reports()
-            return
+        if not var_defs.all_spy_reports[i].res_ges == 0:
+            number_kt = round(
+                (var_defs.all_spy_reports[i].res_ges / kt_kapa)*0.55)
+            if(number_kt < total_kt):
+                total_kt = total_kt - number_kt
+            elif (number_kt > total_kt):
+                number_kt = total_kt
+                total_kt = 0
+            print("Nr KT: "+str(number_kt))
+            my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
+                                      0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
+            data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
+                                            var_defs.Missions.Attack.value, 10, 0, 0, 0)
+            my_fleet.send_fleet(celest_id, data)
+            print("Farm Sess: Angriff auf Inactiv! an: "+str(var_defs.all_spy_reports[i].gal)+":" +
+                  str(var_defs.all_spy_reports[i].sys)+":" +
+                  str(var_defs.all_spy_reports[i].pos)+" , mit KT's: "
+                  + str(number_kt)+" , mit GesRes:"+str(var_defs.all_spy_reports[i].res_ges))
+            if total_kt == 0:
+                spySess.is_running = False
+                var_defs.all_spy_reports.clear()
+                ogamu.delete_all_spy_reports()
+                return
     var_defs.all_spy_reports.clear()
     spySess.is_running = False
     ogamu.delete_all_spy_reports()
@@ -121,39 +129,44 @@ def is_good_spy_report(spy_report):
 def check_all_spy_reports():
     ogamu.log_out()
     ogamu.log_in()
-    for i in range(len(var_defs.all_spy_reports)):
-        gal = var_defs.all_spy_reports[i].gal
-        sys = var_defs.all_spy_reports[i].sys
-        pos = var_defs.all_spy_reports[i].pos
+    for spy_report in var_defs.all_spy_reports:
+        gal = spy_report.gal
+        sys = spy_report.sys
+        pos = spy_report.pos
         report = ogamu.get_spy_report(gal, sys, pos)
-        var_defs.all_spy_reports[i].res_ges = int(report["Result"]["Metal"])+int(
-            report["Result"]["Crystal"])+int(report["Result"]["Deuterium"])
-        if(not is_good_spy_report(report)):
-            del var_defs.all_spy_reports[i]
-    attack_inactives()
+        if(report == None):
+            print("Fehler beim auslesen des Berichtes!")
+            var_defs.all_spy_reports.remove(spy_report)
+        else:
+            spy_report.res_ges = int(report["Result"]["Metal"])+int(
+                report["Result"]["Crystal"])+int(report["Result"]["Deuterium"])
+            if(not is_good_spy_report(report)):
+                print(report)
+                var_defs.all_spy_reports.remove(spy_report)
     # Sorting by res_ges
     var_defs.all_spy_reports.sort(
         key=operator.attrgetter('res_ges'), reverse=True)
+    for i in range(len(var_defs.all_spy_reports)):
+        print(var_defs.all_spy_reports[i].res_ges)
+    attack_inactives()
 
 
 def run_spy_session():
     global spySess
     if spySess.is_running:
-        if(ogamu.checkSlots()[0] == True):
+        ships = ogamu.get_all_ships(spySess.my_celest)
+        total_spy = ships["Result"]["EspionageProbe"]
+        if(ogamu.checkSlots()[0] == True and total_spy >= settings.spy_for_farming):
             print("Sys: "+str(spySess.current_sys) +
                   " , Pos: "+str(spySess.current_pos))
             data = ogamu.get_galaxy_info(spySess.gal, spySess.current_sys)
             enemy_planet = data["Result"]["Planets"][spySess.current_pos-1]
-            if not enemy_planet == None:
-                if(enemy_planet["Inactive"] == True):
-                    if(enemy_planet["Vacation"] == False):
-                        if(enemy_planet["Administrator"] == False):
-                            if(enemy_planet["Banned"] == False):
-                                if(enemy_planet["Player"]["Rank"] < settings.min_rank
-                                        and enemy_planet["Player"]["Rank"] > settings.max_rank):
-                                    print("FOUND ONE TARGET!")
-                                    ogamu.spyEnemy(
-                                        enemy_planet, spySess.my_celest)
+            if (not enemy_planet == None and enemy_planet["Inactive"] == True and enemy_planet["Vacation"] == False and
+                enemy_planet["Banned"] == False and enemy_planet["Player"]["Rank"] < settings.min_rank and
+                    enemy_planet["Player"]["Rank"] > settings.max_rank):
+                print("FOUND ONE TARGET!")
+                ogamu.spyEnemy(
+                    enemy_planet, spySess.my_celest)
             spySess.current_pos = spySess.current_pos + 1
 
             if(spySess.current_pos == 16):
@@ -173,6 +186,7 @@ def run_spy_session():
 
 def setup_atk_session(gal, sys, pos, radius, moon=False):
     global spySess
+    print(gal, sys, pos)
     my_celest = ogamu.get_celest_by_pos(gal, sys, pos, moon)
     spySess.my_celest = my_celest
     ships = ogamu.get_all_ships(spySess.my_celest)
@@ -243,12 +257,21 @@ def gather_all_res(target_gal, target_sys, target_pos, moon=False):
                         print("GATHER mit allen KT's und allen GT!")
 
 
-setup_atk_session(1, 159, 8, 10, False)
-while spySess.is_running:
-    run_spy_session()
-    time.sleep(0.1)
-setup_atk_session(1, 327, 9, 10, False)
-while spySess.is_running:
-    run_spy_session()
-    time.sleep(0.1)
-print("Attacks are done!")
+# settings.adress = "127.0.0.1:1337"
+# counter = 0
+# while True:
+#     setup_atk_session(1, 159, 8, 15, False)
+#     while spySess.is_running:
+#         print(str(counter))
+#         run_spy_session()
+#         counter = counter + 1
+
+
+# settings.adress = "127.0.0.1:8080"
+# counter = 0
+# while True:
+#     print(str(counter))
+#     startExpo()
+#     autoSave()
+#     counter = counter + 1
+#     time.sleep(30)

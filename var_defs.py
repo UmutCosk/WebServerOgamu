@@ -1,6 +1,7 @@
 from enum import Enum
 import json
 import requests
+import settings
 
 # ---Variables--- #
 already_saved_ids = []
@@ -159,7 +160,7 @@ class Fleet:
 
     def send_fleet(self, id_planet, data):
         r = requests.post(
-            url="http://127.0.0.1:8080/bot/planets/" +
+            url="http://"+settings.adress+"/bot/planets/" +
             str(id_planet) +
             "/send-fleet", data=data)
         return r.json()

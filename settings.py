@@ -1,3 +1,5 @@
+# ---Bot ----#
+adress = "127.0.0.1:8080"
 
 # ---General---#
 slots_reserviert = 2
@@ -21,6 +23,6 @@ pathfinder_exp = 1
 farming_an = True
 spy_for_farming = 3
 check_spy = 30
-check_kt = 50
-min_rank = 4000
-max_rank = 100
+check_kt = 1
+min_rank = 2500
+max_rank = 600
