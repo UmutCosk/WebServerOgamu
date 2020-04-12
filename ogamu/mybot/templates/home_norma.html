@@ -6,7 +6,7 @@
 </head>
 <style>
     ul {
-    padding: 7px;
+    padding: 0px;
     background-color: #eee;
     display: inline-block;
     list-style-type: none;
@@ -82,48 +82,20 @@ input[type="number"] {
 </form>
 <form action=farming method="post">
     {% csrf_token %}
-<!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
     <fieldset>
         <legend>Farm Planis</legend>
          <label>Farm on?:</label>
         <input type="checkbox" name="farm_on" {% if farm_on %} checked{% endif %}>
         <br>
-       <ul>
-            <li><label>From Gal 1:</label>
-            <input type="number" name="farm_gal_1" ,value="gal1"></li>
-            <li><label>From Sys 1:</label>
-            <input type="number" name="farm_sys_1" ,value="sys1"></li>
-            <li><label>From Pos 1:</label>
-            <input type="number" name="farm_pos_1" ,value="pos1"></li>
-            <li><label>Radius 1:</label>
-            <input type="number" name="farm_rad_1" ,value="rad1"></li>
-            <li><label>Moon 1:</label>
-            <input type="checkbox" name="farm_moon_1">
-       </ul>
         <ul>
-            <li><label>From Gal 2:</label>
-            <input type="number" name="farm_gal_2" ,value="gal2"></li>
-            <li> <label>From Sys 2:</label>
-            <input type="number" name="farm_sys_2" ,value="sys2"></li>
-            <li><label>From Pos 2:</label>
-            <input type="number" name="farm_pos_2" ,value="pos2"></li>
-            <li><label>Radius 2:</label>
-            <input type="number" name="farm_rad_2" ,value="rad2"></li>
-            <li><label>Moon 2:</label>
-            <input type="checkbox" name="farm_moon_2">
+        {% for farm_planet in farm_planets %}
+            <input type="checkbox" name="{{farm_planet.Name}}" {{farm_planet.Name}} {% if farm_planet.isFarming %} checked{% endif %}>
+            <label> {{farm_planet.Name}}</label>
+        {% endfor %}
         </ul>
-        <ul>
-            <li><label>From Gal 3:</label>
-            <input type="number" name="farm_gal_3" ,value="gal3"></li>
-            <li><label>From Sys 3:</label>
-            <input type="number" name="farm_sys_3" ,value="sys3"></li>
-            <li><label>From Pos 3:</label>
-            <input type="number" name="farm_pos_3" ,value="pos3"></li>
-            <li><label>Radius 3:</label>
-            <input type="number" name="farm_rad_3" ,value="rad3"></li>
-            <li><label>Moon 3:</label>
-            <input type="checkbox" name="farm_moon_3" >
         </ul>
+
+
 
     </fieldset>
     <input type="submit" value="Sammeln" >

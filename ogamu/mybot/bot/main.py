@@ -7,6 +7,7 @@ from threading import Timer
 from . import var_defs
 from . import settings
 from . import ogamu
+from . import views
 
 def startExpo():
     if settings.expo_an:
@@ -64,69 +65,10 @@ def autoSave():
             var_defs.already_spied_ids.clear()
             var_defs.call_back_ids.clear()
 
-def add_to_database(all_spy_reports, my_celest):
-    (gal,sys,pos) = ogamu.get_coords(my_celest)
-    if(not var_defs.farm_database.is_already_farming_planet(gal,sys,pos)):
-        temp_farm_plani = var_defs.FarmPlanets(gal,sys,pos,0)
-        temp_farm_plani.spy_report_collection = var_defs.all_spy_reports.copy()
-        var_defs.farm_database.add_farming_plani(temp_farm_plani)
 
-
-
-def attack_inactives():
-    add_to_database(var_defs.all_spy_reports,var_defs.my_attack_session.my_celest)
-    number_of_attacks = ogamu.get_allowed_slots()
-
-    if(len(var_defs.all_spy_reports) < number_of_attacks):
-        number_of_attacks = len(var_defs.all_spy_reports)
-    ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
-    total_kt = ships['Result']['SmallCargo']
-    print(var_defs.my_attack_session.my_celest)
-    celest_id = ogamu.get_celest_ID(var_defs.my_attack_session.my_celest)
-    if(number_of_attacks == 0):
-        print("Keine guten Scans gefunden!")
-        ogamu.log_out()
-        ogamu.log_in()
-    (kt_kapa, gt_kapa) = ogamu.get_cargo_kapa()
-    print("Number of Attacks: "+str(number_of_attacks))
-    for i in range(number_of_attacks):
-        if not var_defs.all_spy_reports[i].res_ges == 0:
-            number_kt = round(
-                (var_defs.all_spy_reports[i].res_ges / kt_kapa)*0.55)
-            if(number_kt < total_kt):
-                total_kt = total_kt - number_kt
-            elif (number_kt > total_kt):
-                number_kt = total_kt
-                total_kt = 0
-            print("Nr KT: "+str(number_kt))
-            my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
-                                      0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
-            data = my_fleet.fill_fleet_data(var_defs.all_spy_reports[i].gal, var_defs.all_spy_reports[i].sys, var_defs.all_spy_reports[i].pos,
-                                            var_defs.Missions.Attack.value, 10, 0, 0, 0)
-            my_fleet.send_fleet(celest_id, data)
-            print("Farm Sess: Angriff auf Inactiv! an: "+str(var_defs.all_spy_reports[i].gal)+":" +
-                  str(var_defs.all_spy_reports[i].sys)+":" +
-                  str(var_defs.all_spy_reports[i].pos)+" , mit KT's: "
-                  + str(number_kt)+" , mit GesRes:"+str(var_defs.all_spy_reports[i].res_ges))
-            if total_kt == 0:
-                var_defs.my_attack_session.is_running  = False
-                var_defs.all_spy_reports.clear()
-                ogamu.delete_all_spy_reports()
-                var_defs.cur_farm_nr = var_defs.cur_farm_nr + 1
-                if(var_defs.cur_farm_nr == var_defs.max_farm_nr):
-                    var_defs.cur_farm_nr = 0
-                    var_defs.already_attacking = False
-                return
-
-    var_defs.all_spy_reports.clear()
-    var_defs.my_attack_session.is_running  = False
-    ogamu.delete_all_spy_reports()
-    var_defs.cur_farm_nr = var_defs.cur_farm_nr + 1
-    if var_defs.cur_farm_nr == var_defs.max_farm_nr:
-        var_defs.cur_farm_nr = 0
-        var_defs.already_attacking = False
-
-
+   # if (not enemy_planet == None and enemy_planet["Inactive"] == True and enemy_planet["Vacation"] == False and
+   #              enemy_planet["Banned"] == False and enemy_planet["Player"]["Rank"] < settings.min_rank and
+   #                  enemy_planet["Player"]["Rank"] > settings.max_rank):
 def is_good_spy_report(spy_report):
     result = spy_report["Result"]
     if(result["HasFleetInformation"] == True and result["HasDefensesInformation"] == True):
@@ -139,140 +81,6 @@ def is_good_spy_report(spy_report):
            result["Recycler"] == None and result["Reaper"] == None and result["Pathfinder"] == None):
             return True
     return False
-
-
-def check_all_spy_reports():
-    ogamu.log_out()
-    ogamu.log_in()
-    for spy_report in var_defs.all_spy_reports:
-        gal = spy_report.gal
-        sys = spy_report.sys
-        pos = spy_report.pos
-        report = ogamu.get_spy_report(gal, sys, pos)
-        if(report["Status"] == 'error'):
-            still_error = True
-            for i in range(3):
-                print("Fehler beim auslesen des Berichtes Try: nr.: "+str(i))
-                ogamu.log_out()
-                ogamu.log_in()
-                report = ogamu.get_spy_report(gal, sys, pos)
-                if (not report["Status"] == 'error'):
-                    still_error = False
-                    break
-            if(still_error):
-                var_defs.all_spy_reports.remove(spy_report)
-
-        else:
-            spy_report.res_ges = int(report["Result"]["Metal"])+int(
-                report["Result"]["Crystal"])+int(report["Result"]["Deuterium"])
-            if(not is_good_spy_report(report)):
-                print(report)
-                var_defs.all_spy_reports.remove(spy_report)
-    # Sorting by res_ges
-    var_defs.all_spy_reports.sort(
-        key=operator.attrgetter('res_ges'), reverse=True)
-    for i in range(len(var_defs.all_spy_reports)):
-        print(var_defs.all_spy_reports[i].res_ges)
-    attack_inactives()
-
-
-def run_spy_session():
-    (gal,sys,pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
-    if(settings.farm_from_database and not settings.reset_farm_database):
-        ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
-        total_spy = ships["Result"]["EspionageProbe"]
-        if (ogamu.checkSlots()[0] == True and total_spy >= settings.spy_for_farming):
-            (gal, sys, pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
-            index = var_defs.my_attack_session.current_sys
-            farm_plani = var_defs.farm_database.get_farm_plani_from_database(gal,sys,pos)
-            print("farm plani länge: "+str(len(var_defs.farm_database.all_farm_planis)))
-            print("spy reports lönge: "+str(len(farm_plani.spy_report_collection)))
-
-
-            enemy_gal = farm_plani.spy_report_collection[index].gal
-            enemy_sys = farm_plani.spy_report_collection[index].sys
-            enemy_pos = farm_plani.spy_report_collection[index].pos
-            print(enemy_gal,enemy_sys,enemy_pos)
-            ogamu.spyEnemy(gal,sys,pos,var_defs.my_attack_session.my_celest)
-            var_defs.my_attack_session.current_sys = var_defs.my_attack_session.current_sys + 1
-            print("Spy from Database!")
-            if(var_defs.my_attack_session.current_sys == var_defs.my_attack_session.last_sys):
-                print("Spy Session ist vorbei!")
-                time.sleep(60)
-                check_all_spy_reports()
-
-    else:
-        ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
-        total_spy = ships["Result"]["EspionageProbe"]
-        if(ogamu.checkSlots()[0] == True and total_spy >= settings.spy_for_farming):
-            print("Sys: "+str(var_defs.my_attack_session.current_sys) +
-                  " , Pos: "+str(var_defs.my_attack_session.current_pos))
-            data = ogamu.get_galaxy_info(var_defs.my_attack_session.gal, var_defs.my_attack_session.current_sys)
-            enemy_planet = data["Result"]["Planets"][var_defs.my_attack_session.current_pos-1]
-            if (not enemy_planet == None and enemy_planet["Inactive"] == True and enemy_planet["Vacation"] == False and
-                enemy_planet["Banned"] == False and enemy_planet["Player"]["Rank"] < settings.min_rank and
-                    enemy_planet["Player"]["Rank"] > settings.max_rank):
-                print("FOUND ONE TARGET!")
-                (gale, syse, pose) = ogamu.get_coords(enemy_planet)
-                ogamu.spyEnemy(
-                    gale,syse,pose, var_defs.my_attack_session.my_celest)
-                spy_report = var_defs.SpyReports(0, gale, syse, pose)
-                var_defs.all_spy_reports.append(spy_report)
-            var_defs.my_attack_session.current_pos = var_defs.my_attack_session.current_pos + 1
-
-            if(var_defs.my_attack_session.current_pos == 16):
-                var_defs.my_attack_session.current_pos = 1
-                var_defs.my_attack_session.current_sys = var_defs.my_attack_session.current_sys + 1
-                if var_defs.my_attack_session.current_sys == 500:
-                    var_defs.my_attack_session.current_sys = 1
-                if var_defs.my_attack_session.current_sys == var_defs.my_attack_session.last_sys:
-                    print("Spy Session ist vorbei!")
-                    time.sleep(60)
-                    check_all_spy_reports()
-                    # Nach 30 Sekunden check alle SpyRepots
-        else:
-            print("Attack Session pausiert!: Nicht genug Slots oder Spiosonden")
-
-
-def setup_atk_session(gals, syss, poss, radiuss, moon=False):
-    #Init
-    var_defs.all_spy_reports.clear()
-    settings.farm_from_database = False
-    gal = int(gals)
-    sys = int(syss)
-    pos = int(poss)
-    radius = int(radiuss)
-    my_celest = ogamu.get_celest_by_pos(gal, sys, pos, moon)
-    var_defs.my_attack_session.my_celest = my_celest
-    ships = ogamu.get_all_ships(my_celest)
-    total_kt = ships["Result"]["SmallCargo"]
-    total_spy = ships["Result"]["EspionageProbe"]
-    if (total_kt < settings.check_kt):
-        print("Zu wenig Kleine Transis!!")
-        var_defs.my_attack_session.is_running  = False
-        return
-    if (total_spy < settings.check_spy):
-        print("Zu wenig Spio Sonden!!")
-        var_defs.my_attack_session.is_running  = False
-        return
-    var_defs.my_attack_session.gal = gal
-    var_defs.my_attack_session.moon = moon
-    #Farm from Database
-    (gal, sys, pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
-    if (var_defs.farm_database.is_already_farming_planet(gal, sys, pos) and not settings.reset_farm_database):
-        settings.farm_from_database = True
-        var_defs.my_attack_session.current_sys = 0
-        farm_plani = var_defs.farm_database.get_farm_plani_from_database(gal, sys, pos)
-        var_defs.my_attack_session.last_sys = len( farm_plani.spy_report_collection)
-        var_defs.all_spy_reports = farm_plani.spy_report_collection
-
-        print("Atk From Database!")
-    else:
-        (min, max) = ogamu.calc_around_gal(sys, radius)
-        var_defs.my_attack_session.current_sys = min
-        var_defs.my_attack_session.last_sys = max
-        print("Atk. Session gestartet von P: "+str(gal)+":"+str(sys)+":"+str(pos))
-    var_defs.my_attack_session.is_running  = True
 
 
 def gather_all_res(target_gal, target_sys, target_pos, moon=False):
@@ -322,3 +130,12 @@ def gather_all_res(target_gal, target_sys, target_pos, moon=False):
                         my_fleet.send_fleet(from_planet_id, data)
                         print("GATHER mit allen KT's und allen GT!")
 
+
+
+def scan_modus():
+    current_farm_plani = views.all_farm_planets.get_current_farm_planet()
+    data = ogamu.get_galaxy_info(current_farm_plani.current_scan_gal, current_farm_plani.current_scan_sys)
+    current_farm_plani.current_scan_sys = current_farm_plani.current_scan_sys + 1
+    if(current_farm_plani.current_scan_sys == current_farm_plani.max_scan_sys):
+        print("Scan done for: !"+str(current_farm_plani.name))
+        current_farm_plani.already_scanned = True

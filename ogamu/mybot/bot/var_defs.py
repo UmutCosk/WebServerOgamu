@@ -2,72 +2,101 @@ from enum import Enum
 import json
 import requests
 from . import settings
+from . import views
+from . import ogamu
 
 # ---Variables--- #
 already_saved_ids = []
 already_spied_ids = []
 call_back_ids = []
 all_spy_reports = []
-all_farm_planis = []
-max_farm_nr = 0
-cur_farm_nr = 0
-already_attacking = False
+all_planets = []
 
 
-class FarmDatabase:
+class SpyReport:
+    def __init__(self,gal,sys,pos,res=0):
+        self.gal = gal
+        self.sys = sys
+        self.pos = pos
+        self.res = res
+
+class FarmPlanet:
+    def __init__(self,name,gal,sys,pos,moon=False):
+        self.name = name
+        self.gal = gal
+        self.sys = sys
+        self.pos = pos
+        self.moon = moon
+        self.spy_reports = []
+        self.allowed_farming = False
+        self.already_scanned = False
+    # Scans
+        self.current_scan_gal = 0
+        self.current_scan_sys = 0
+        self.current_scan_pos = 0
+        self.max_scan_sys = 0
+        self.all_inactives_scans = []
+
+    def init_scan_vars(self):
+        current_farm_plani = views.all_farm_planets.get_current_farm_planet()
+        current_gal = current_farm_plani.gal
+        current_sys = current_farm_plani.sys
+        (min, max) = ogamu.calc_around_gal(current_sys, settings.farming_radius)
+        self.current_scan_gal = current_gal
+        self.current_scan_sys = min
+        self.max_scan_sys = max
+        self.turn_on()
+        views.current_state = FarmState.Scan
+        print("Wurde initilaizisiert!")
+    def turn_on(self):
+        self.allowed_farming = True
+    def turn_off(self):
+        self.allowed_farming = False
+
+
+class AllFarmPlanets:
     def __init__(self):
-        self.all_farm_planis = []
-    def add_farming_plani(self,farm_planet):
-        self.all_farm_planis.append(farm_planet)
-    def is_already_farming_planet(self,gal,sys,pos):
-        for farm_plani in self.all_farm_planis:
-            if(gal == farm_plani.gal and sys == farm_plani.sys and pos == farm_plani.pos):
+        self.planets =[]
+        self.currentIndex = 0
+    def get_current_farm_planet(self):
+        return self.planets[self.currentIndex]
+    def next_farm_planet(self):
+        self.currentIndex = self.currentIndex + 1
+        print("NEXT FARM PLANET!")
+        if(self.currentIndex == len(self.planets)):
+            self.currentIndex = 0
+    def already_exits(self,name):
+        for planet in self.planets:
+            if(name == planet.name):
                 return True
         return False
-    def get_farm_plani_from_database(self,gal,sys,pos):
-        for farm_plani in self.all_farm_planis:
-            if (gal == farm_plani.gal and sys == farm_plani.sys and pos == farm_plani.pos):
-                return farm_plani
+    def get_planet_by_name(self,name):
+        for planet in self.planets:
+            if (name == planet.name):
+                return planet
+
+    def add_planet(self,name,gal,sys,pos,moon=False):
+        farm_planet = FarmPlanet(name,gal,sys,pos,moon)
+        self.planets.append(farm_planet)
+
+
+    def skip_if_not_allowed(self,farm_planet):
+        if(not farm_planet.allowed_farming):
+            self.next_farm_planet()
+            print("Skipping to next farm planet")
+            return True
+        return False
+    def all_already_scanned(self):
+        for farm_planet in self.planets:
+            if(not farm_planet.already_scanned):
+                return False
+        return True
 
 
 
-farm_database = FarmDatabase()
 
 
 
-class FarmPlanets:
-    def __init__(self,gal,sys,pos,rad,moon=False):
-        self.gal = gal
-        self.sys = sys
-        self.pos = pos
-        self.moon = moon
-        self.use = False
-        self.rad = rad
-        self.spy_report_collection = []
-
-
-farmPlani1 = FarmPlanets(1,1,1,1,False)
-farmPlani2 = FarmPlanets(1,1,1,1,False)
-farmPlani3 = FarmPlanets(1,1,1,1,False)
-
-class AttackSession:
-    def __init__(self, sys_min, sys_max, gal, moon, my_celest):
-        self.gal = gal
-        self.moon = moon
-        self.my_celest = my_celest
-        self.current_sys = sys_min
-        self.last_sys = sys_max
-        self.current_pos = 1
-        self.is_running = False
-
-my_attack_session = AttackSession(0,0,0,False,None)
-
-class SpyReports:
-    def __init__(self, res_ges, gal, sys, pos):
-        self.res_ges = res_ges
-        self.gal = gal
-        self.sys = sys
-        self.pos = pos
 
 
 class Coords:
@@ -89,6 +118,13 @@ class Missions(Enum):
     Destroy = "9"
     MissileAttack = "10"
     Expedition = "15"
+
+class FarmState(Enum):
+    Scan = "scan"
+    Spy = "spy"
+    Attack = "attack"
+    Idle = "idle"
+    Init = "idle"
 
 
 class Ships(Enum):

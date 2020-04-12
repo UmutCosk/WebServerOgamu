@@ -20,10 +20,7 @@ schlachtkreuzer_exp = 0
 pathfinder_exp = 0
 
 # ---Farming--- #
-reset_farm_database = False
-farm_from_database = False
 spy_for_farming = 1
-check_spy = 0
-check_kt = 0
+farming_radius = 3
 min_rank = 5000
 max_rank = 100

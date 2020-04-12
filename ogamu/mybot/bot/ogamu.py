@@ -287,6 +287,10 @@ def calc_around_gal(sys, radius):
         min_result = 499 + min
     else:
         min_result = min
+    if(min_result > max_result):
+        temp_max = min_result
+        min_result = max_result
+        max_result = temp_max
     return (min_result, max_result)
 
 
