@@ -8,9 +8,6 @@ from . import var_defs
 from . import settings
 from . import ogamu
 
-spySess = var_defs.AttackSession(0, 0, 0, False, None)
-
-
 def startExpo():
     if settings.expo_an:
         for planet in ogamu.get_planets():
@@ -22,15 +19,16 @@ def startExpo():
 
 
 def saveAllFleet(attacked_planet):
-    id_planet = ogamu.get_celest_ID(attacked_planet)
-    (gal, sys, pos) = ogamu.get_coords(attacked_planet)
-    (metal, crystal, deut) = ogamu.get_celest_ressis(attacked_planet)
+    id_planet = ogamu.get_celest_ID2(attacked_planet)
+    (gal, sys, pos) = ogamu.get_coords2(attacked_planet)
+    (metal, crystal, deut) = ogamu.get_celest_ressis2(attacked_planet)
     # Schiffe
-    ships = ogamu.get_all_ships(attacked_planet)
-    fleet = var_defs.Fleet(ships=ships)
+    ships = ogamu.get_all_ships2(id_planet)
+    fleet = var_defs.Fleet(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,ships=ships)
     data = fleet.fill_fleet_data(
-        gal, sys, 16, var_defs.Missions.Expedition.value, 1, metal, crystal, deut)
+        5, 249, 9, var_defs.Missions.Park.value, 1, metal, crystal, deut)
     data = fleet.send_fleet(id_planet, data)
+    print(data)
     if(not data["Status"] == 'error'):
         var_defs.call_back_ids.append(data["Result"]["ID"])
         print("SEND FOR SAVE")
@@ -46,12 +44,11 @@ def autoSave():
                 arrival_time = attack["ArriveIn"]
                 print("arrival time: "+str(arrival_time))
                 # Zurück spionieren bei unter 1234 Sekunden
-                print(attack)
                 if (attack["ID"] not in var_defs.already_spied_ids and arrival_time < 2345):
                     if(not ogamu.onlySpy(attack) or settings.test_on):
                         var_defs.already_spied_ids.append(attack["ID"])
-                        ogamu.spyEnemy(attack["Origin"],
-                                       attack["Destination"], 1)
+                        ogamu.spyEnemy2(attack["Origin"],
+                                       attack["Destination"])
                         ogamu.isUnderAttack()
                         time.sleep(3)
                 # Saven bei unter 123 Sekunden
@@ -67,16 +64,25 @@ def autoSave():
             var_defs.already_spied_ids.clear()
             var_defs.call_back_ids.clear()
 
+def add_to_database(all_spy_reports, my_celest):
+    (gal,sys,pos) = ogamu.get_coords(my_celest)
+    if(not var_defs.farm_database.is_already_farming_planet(gal,sys,pos)):
+        temp_farm_plani = var_defs.FarmPlanets(gal,sys,pos,0)
+        temp_farm_plani.spy_report_collection = var_defs.all_spy_reports.copy()
+        var_defs.farm_database.add_farming_plani(temp_farm_plani)
+
+
 
 def attack_inactives():
-    global atkSess
+    add_to_database(var_defs.all_spy_reports,var_defs.my_attack_session.my_celest)
     number_of_attacks = ogamu.get_allowed_slots()
-    print(number_of_attacks)
+
     if(len(var_defs.all_spy_reports) < number_of_attacks):
         number_of_attacks = len(var_defs.all_spy_reports)
-    ships = ogamu.get_all_ships(spySess.my_celest)
+    ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
     total_kt = ships['Result']['SmallCargo']
-    celest_id = ogamu.get_celest_ID(spySess.my_celest)
+    print(var_defs.my_attack_session.my_celest)
+    celest_id = ogamu.get_celest_ID(var_defs.my_attack_session.my_celest)
     if(number_of_attacks == 0):
         print("Keine guten Scans gefunden!")
         ogamu.log_out()
@@ -103,13 +109,22 @@ def attack_inactives():
                   str(var_defs.all_spy_reports[i].pos)+" , mit KT's: "
                   + str(number_kt)+" , mit GesRes:"+str(var_defs.all_spy_reports[i].res_ges))
             if total_kt == 0:
-                spySess.is_running = False
+                var_defs.my_attack_session.is_running  = False
                 var_defs.all_spy_reports.clear()
                 ogamu.delete_all_spy_reports()
+                var_defs.cur_farm_nr = var_defs.cur_farm_nr + 1
+                if(var_defs.cur_farm_nr == var_defs.max_farm_nr):
+                    var_defs.cur_farm_nr = 0
+                    var_defs.already_attacking = False
                 return
+
     var_defs.all_spy_reports.clear()
-    spySess.is_running = False
+    var_defs.my_attack_session.is_running  = False
     ogamu.delete_all_spy_reports()
+    var_defs.cur_farm_nr = var_defs.cur_farm_nr + 1
+    if var_defs.cur_farm_nr == var_defs.max_farm_nr:
+        var_defs.cur_farm_nr = 0
+        var_defs.already_attacking = False
 
 
 def is_good_spy_report(spy_report):
@@ -134,9 +149,19 @@ def check_all_spy_reports():
         sys = spy_report.sys
         pos = spy_report.pos
         report = ogamu.get_spy_report(gal, sys, pos)
-        if(report == None):
-            print("Fehler beim auslesen des Berichtes!")
-            var_defs.all_spy_reports.remove(spy_report)
+        if(report["Status"] == 'error'):
+            still_error = True
+            for i in range(3):
+                print("Fehler beim auslesen des Berichtes Try: nr.: "+str(i))
+                ogamu.log_out()
+                ogamu.log_in()
+                report = ogamu.get_spy_report(gal, sys, pos)
+                if (not report["Status"] == 'error'):
+                    still_error = False
+                    break
+            if(still_error):
+                var_defs.all_spy_reports.remove(spy_report)
+
         else:
             spy_report.res_ges = int(report["Result"]["Metal"])+int(
                 report["Result"]["Crystal"])+int(report["Result"]["Deuterium"])
@@ -152,61 +177,102 @@ def check_all_spy_reports():
 
 
 def run_spy_session():
-    global spySess
-    if spySess.is_running:
-        ships = ogamu.get_all_ships(spySess.my_celest)
+    (gal,sys,pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
+    if(settings.farm_from_database and not settings.reset_farm_database):
+        ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
+        total_spy = ships["Result"]["EspionageProbe"]
+        if (ogamu.checkSlots()[0] == True and total_spy >= settings.spy_for_farming):
+            (gal, sys, pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
+            index = var_defs.my_attack_session.current_sys
+            farm_plani = var_defs.farm_database.get_farm_plani_from_database(gal,sys,pos)
+            print("farm plani länge: "+str(len(var_defs.farm_database.all_farm_planis)))
+            print("spy reports lönge: "+str(len(farm_plani.spy_report_collection)))
+
+
+            enemy_gal = farm_plani.spy_report_collection[index].gal
+            enemy_sys = farm_plani.spy_report_collection[index].sys
+            enemy_pos = farm_plani.spy_report_collection[index].pos
+            print(enemy_gal,enemy_sys,enemy_pos)
+            ogamu.spyEnemy(gal,sys,pos,var_defs.my_attack_session.my_celest)
+            var_defs.my_attack_session.current_sys = var_defs.my_attack_session.current_sys + 1
+            print("Spy from Database!")
+            if(var_defs.my_attack_session.current_sys == var_defs.my_attack_session.last_sys):
+                print("Spy Session ist vorbei!")
+                time.sleep(60)
+                check_all_spy_reports()
+
+    else:
+        ships = ogamu.get_all_ships(var_defs.my_attack_session.my_celest)
         total_spy = ships["Result"]["EspionageProbe"]
         if(ogamu.checkSlots()[0] == True and total_spy >= settings.spy_for_farming):
-            print("Sys: "+str(spySess.current_sys) +
-                  " , Pos: "+str(spySess.current_pos))
-            data = ogamu.get_galaxy_info(spySess.gal, spySess.current_sys)
-            enemy_planet = data["Result"]["Planets"][spySess.current_pos-1]
+            print("Sys: "+str(var_defs.my_attack_session.current_sys) +
+                  " , Pos: "+str(var_defs.my_attack_session.current_pos))
+            data = ogamu.get_galaxy_info(var_defs.my_attack_session.gal, var_defs.my_attack_session.current_sys)
+            enemy_planet = data["Result"]["Planets"][var_defs.my_attack_session.current_pos-1]
             if (not enemy_planet == None and enemy_planet["Inactive"] == True and enemy_planet["Vacation"] == False and
                 enemy_planet["Banned"] == False and enemy_planet["Player"]["Rank"] < settings.min_rank and
                     enemy_planet["Player"]["Rank"] > settings.max_rank):
                 print("FOUND ONE TARGET!")
+                (gale, syse, pose) = ogamu.get_coords(enemy_planet)
                 ogamu.spyEnemy(
-                    enemy_planet, spySess.my_celest)
-            spySess.current_pos = spySess.current_pos + 1
+                    gale,syse,pose, var_defs.my_attack_session.my_celest)
+                spy_report = var_defs.SpyReports(0, gale, syse, pose)
+                var_defs.all_spy_reports.append(spy_report)
+            var_defs.my_attack_session.current_pos = var_defs.my_attack_session.current_pos + 1
 
-            if(spySess.current_pos == 16):
-                spySess.current_pos = 1
-                spySess.current_sys = spySess.current_sys + 1
-                if spySess.current_sys == 500:
-                    spySess.current_sys = 1
-                if spySess.current_sys == spySess.last_sys:
-                    spySess.is_running = False
+            if(var_defs.my_attack_session.current_pos == 16):
+                var_defs.my_attack_session.current_pos = 1
+                var_defs.my_attack_session.current_sys = var_defs.my_attack_session.current_sys + 1
+                if var_defs.my_attack_session.current_sys == 500:
+                    var_defs.my_attack_session.current_sys = 1
+                if var_defs.my_attack_session.current_sys == var_defs.my_attack_session.last_sys:
                     print("Spy Session ist vorbei!")
                     time.sleep(60)
                     check_all_spy_reports()
                     # Nach 30 Sekunden check alle SpyRepots
         else:
-            print("Attack Session pausiert!: Nicht genug Slots")
+            print("Attack Session pausiert!: Nicht genug Slots oder Spiosonden")
 
 
-def setup_atk_session(gal, sys, pos, radius, moon=False):
-    global spySess
-    print(gal, sys, pos)
+def setup_atk_session(gals, syss, poss, radiuss, moon=False):
+    #Init
+    var_defs.all_spy_reports.clear()
+    settings.farm_from_database = False
+    gal = int(gals)
+    sys = int(syss)
+    pos = int(poss)
+    radius = int(radiuss)
     my_celest = ogamu.get_celest_by_pos(gal, sys, pos, moon)
-    spySess.my_celest = my_celest
-    ships = ogamu.get_all_ships(spySess.my_celest)
+    var_defs.my_attack_session.my_celest = my_celest
+    ships = ogamu.get_all_ships(my_celest)
     total_kt = ships["Result"]["SmallCargo"]
     total_spy = ships["Result"]["EspionageProbe"]
-    if(total_kt < settings.check_kt):
+    if (total_kt < settings.check_kt):
         print("Zu wenig Kleine Transis!!")
-        spySess.is_running = False
+        var_defs.my_attack_session.is_running  = False
         return
-    if(total_spy < settings.check_spy):
+    if (total_spy < settings.check_spy):
         print("Zu wenig Spio Sonden!!")
-        spySess.is_running = False
+        var_defs.my_attack_session.is_running  = False
         return
-    (min, max) = ogamu.calc_around_gal(sys, radius)
-    spySess.current_sys = min
-    spySess.last_sys = max
-    spySess.gal = gal
-    spySess.mon = moon
-    spySess.is_running = True
-    print("Atk. Session gestartet von P: "+str(gal)+":"+str(sys)+":"+str(pos))
+    var_defs.my_attack_session.gal = gal
+    var_defs.my_attack_session.moon = moon
+    #Farm from Database
+    (gal, sys, pos) = ogamu.get_coords(var_defs.my_attack_session.my_celest)
+    if (var_defs.farm_database.is_already_farming_planet(gal, sys, pos) and not settings.reset_farm_database):
+        settings.farm_from_database = True
+        var_defs.my_attack_session.current_sys = 0
+        farm_plani = var_defs.farm_database.get_farm_plani_from_database(gal, sys, pos)
+        var_defs.my_attack_session.last_sys = len( farm_plani.spy_report_collection)
+        var_defs.all_spy_reports = farm_plani.spy_report_collection
+
+        print("Atk From Database!")
+    else:
+        (min, max) = ogamu.calc_around_gal(sys, radius)
+        var_defs.my_attack_session.current_sys = min
+        var_defs.my_attack_session.last_sys = max
+        print("Atk. Session gestartet von P: "+str(gal)+":"+str(sys)+":"+str(pos))
+    var_defs.my_attack_session.is_running  = True
 
 
 def gather_all_res(target_gal, target_sys, target_pos, moon=False):
@@ -256,22 +322,3 @@ def gather_all_res(target_gal, target_sys, target_pos, moon=False):
                         my_fleet.send_fleet(from_planet_id, data)
                         print("GATHER mit allen KT's und allen GT!")
 
-
-# settings.adress = "127.0.0.1:1337"
-# counter = 0
-# while True:
-#     setup_atk_session(1, 159, 8, 15, False)
-#     while spySess.is_running:
-#         print(str(counter))
-#         run_spy_session()
-#         counter = counter + 1
-
-
-# settings.adress = "127.0.0.1:8080"
-# counter = 0
-# while True:
-#     print(str(counter))
-#     startExpo()
-#     autoSave()
-#     counter = counter + 1
-#     time.sleep(30)

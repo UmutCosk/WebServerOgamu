@@ -71,6 +71,7 @@ def get_moons():
     return moons["Result"]
 
 
+
 def get_coords(celest):
     gal = celest["Coordinate"]["Galaxy"]
     sys = celest["Coordinate"]["System"]
@@ -92,14 +93,34 @@ def get_celest_ID(celestial):
         celest = r.json()
     return celest["Result"]["ID"]
 
+def get_coords2(celest):
+    gal = celest["Galaxy"]
+    sys = celest["System"]
+    pos = celest["Position"]
+    return (gal, sys, pos)
+
+
+def get_celest_ID2(celestial):
+    celest = None
+    celesttype = celestial["Type"]
+    (gal, sys, pos) = get_coords2(celestial)
+    if(str(celesttype) == str(3)):
+        r = requests.get(
+            url="http://"+settings.adress+"/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    else:
+        r = requests.get(
+            url="http://"+settings.adress+"/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+        celest = r.json()
+    return celest["Result"]["ID"]
+
+
 
 def get_celest_by_pos(gal, sys, pos, moon=False):
-    print(gal, sys, pos, moon)
     if moon == False:
         r = requests.get(
             url="http://"+settings.adress+"/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
-        print(r)
         return celest["Result"]
     else:
         r = requests.get(
@@ -192,6 +213,16 @@ def get_all_ships(celest):
     ships = r.json()
     return ships
 
+def get_all_ships2(celest_id):
+    id_celest = celest_id
+    r = requests.get(
+        url="http://"+settings.adress+"/bot/planets/" +
+        str(id_celest) +
+        "/ships")
+    ships = r.json()
+    return ships
+
+
 
 def get_all_attacks():
     r = requests.get(url="http://"+settings.adress+"/bot/attacks")
@@ -213,18 +244,19 @@ def get_celest_ressis(celest):
     deut = celest["Result"]["Deuterium"]
     return (met, crys, deut)
 
+def get_celest_ressis2(celest):
+    id_celest = get_celest_ID2(celest)
+    r = requests.get(
+        url="http://"+settings.adress+"/bot/planets/"+str(id_celest)+"/resources")
+    celest = r.json()
+    met = celest["Result"]["Metal"]
+    crys = celest["Result"]["Crystal"]
+    deut = celest["Result"]["Deuterium"]
+    return (met, crys, deut)
 
-# ogame.GetEspionageReportHandler)
-# 	e.GET("/bot/espionage-report/:galaxy/:system/:position", ogame.GetEspionageReportForHandler)
-# 	e.GET("/bot/espionage-report", ogame.GetEspionageReportMessagesHandler)
-# 	e.POST("/bot/delete-report/:messageID", ogame.DeleteMessageHandler)
-# 	e.POST("/bot/delete-all-espionage-reports", ogame.DeleteEspionageMessagesHandler)
-# 	e.POST("/bot/delete-all-reports/:tabIndex",
-def spyEnemy(enemy_planet, my_celest):
+
+def spyEnemy(gal,sys,pos, my_celest):
     id_celest = get_celest_ID(my_celest)
-    (gal, sys, pos) = get_coords(enemy_planet)
-    spy_report = var_defs.SpyReports(0, gal, sys, pos)
-    var_defs.all_spy_reports.append(spy_report)
     fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, settings.spy_for_farming, 0, 0, 0, 0)
     data = fleet.fill_fleet_data(
@@ -232,6 +264,15 @@ def spyEnemy(enemy_planet, my_celest):
     data = fleet.send_fleet(id_celest, data)
     print("Enemy spied!")
 
+def spyEnemy2(enemy_planet, my_celest):
+    id_celest = get_celest_ID2(my_celest)
+    (gal, sys, pos) = get_coords2(enemy_planet)
+    fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0,1,0,0,0,0)
+    data = fleet.fill_fleet_data(
+        gal, sys, pos, var_defs.Missions.Spy.value, 9, 0, 0, 0)
+    data = fleet.send_fleet(id_celest, data)
+    print("Enemy spied!")
 
 def calc_around_gal(sys, radius):
     min = sys-radius
@@ -276,3 +317,5 @@ def get_spy_report(gal, sys, pos):
     r = requests.get(
         url="http://"+settings.adress+"/bot/espionage-report/"+str(gal)+"/"+str(sys)+"/"+str(pos))
     return r.json()
+
+

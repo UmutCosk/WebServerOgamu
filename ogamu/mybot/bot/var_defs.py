@@ -8,19 +8,47 @@ already_saved_ids = []
 already_spied_ids = []
 call_back_ids = []
 all_spy_reports = []
+all_farm_planis = []
+max_farm_nr = 0
+cur_farm_nr = 0
+already_attacking = False
+
+
+class FarmDatabase:
+    def __init__(self):
+        self.all_farm_planis = []
+    def add_farming_plani(self,farm_planet):
+        self.all_farm_planis.append(farm_planet)
+    def is_already_farming_planet(self,gal,sys,pos):
+        for farm_plani in self.all_farm_planis:
+            if(gal == farm_plani.gal and sys == farm_plani.sys and pos == farm_plani.pos):
+                return True
+        return False
+    def get_farm_plani_from_database(self,gal,sys,pos):
+        for farm_plani in self.all_farm_planis:
+            if (gal == farm_plani.gal and sys == farm_plani.sys and pos == farm_plani.pos):
+                return farm_plani
+
+
+
+farm_database = FarmDatabase()
+
 
 
 class FarmPlanets:
-    def __init__(self,gal,sys,pos,moon=False):
+    def __init__(self,gal,sys,pos,rad,moon=False):
         self.gal = gal
         self.sys = sys
         self.pos = pos
         self.moon = moon
         self.use = False
+        self.rad = rad
+        self.spy_report_collection = []
 
-farmPlani1 = FarmPlanets(1,1,1,False)
-farmPlani2 = FarmPlanets(1,1,1,False)
-farmPlani3 = FarmPlanets(1,1,1,False)
+
+farmPlani1 = FarmPlanets(1,1,1,1,False)
+farmPlani2 = FarmPlanets(1,1,1,1,False)
+farmPlani3 = FarmPlanets(1,1,1,1,False)
 
 class AttackSession:
     def __init__(self, sys_min, sys_max, gal, moon, my_celest):
@@ -30,8 +58,9 @@ class AttackSession:
         self.current_sys = sys_min
         self.last_sys = sys_max
         self.current_pos = 1
-        self.is_running = True
+        self.is_running = False
 
+my_attack_session = AttackSession(0,0,0,False,None)
 
 class SpyReports:
     def __init__(self, res_ges, gal, sys, pos):
@@ -101,6 +130,7 @@ class Fleet:
         self.crawler = crawler
         self.reaper = reaper
         self.path = path
+        print(ships)
         if(not ships == None):
             self.lj = ships["Result"]["LightFighter"]
             self.sj = ships["Result"]["HeavyFighter"]
@@ -115,6 +145,7 @@ class Fleet:
             self.kolo = ships["Result"]["ColonyShip"]
             self.recyc = ships["Result"]["Recycler"]
             self.spio = ships["Result"]["EspionageProbe"]
+            print("SPIOOOO: "+str(self.spio))
             self.sats = ships["Result"]["SolarSatellite"]
             self.crawler = ships["Result"]["Crawler"]
             self.reaper = ships["Result"]["Reaper"]
