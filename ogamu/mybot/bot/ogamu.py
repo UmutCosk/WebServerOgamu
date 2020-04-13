@@ -40,11 +40,19 @@ def isUnderAttack():
         telegram_bot_sendtext("Du wirst angegriffen!")
     return data["Result"]
 
+def is_slots_ready_for_next_attack():
+    r = requests.get(url="http://" + settings.adress + "/bot/fleets/slots")
+    data = r.json()
+    slots_that_should_be_free = settings.slots_reserviert + settings.expo_reserviert
+    if(data["Result"]["InUse"] <= slots_that_should_be_free):
+        return True
+    return False
 
 def get_allowed_slots():
     r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
-    return data["Result"]["Total"] - data["Result"]["InUse"] - settings.slots_reserviert
+    return data["Result"]["Total"] - data["Result"]["InUse"] - settings.slots_reserviert - settings.expo_reserviert
+
 
 
 def checkSlots():
@@ -52,7 +60,7 @@ def checkSlots():
     result_exp = False
     r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
-    if(data["Result"]["InUse"] + settings.slots_reserviert < data["Result"]["Total"]):
+    if(data["Result"]["InUse"] + settings.slots_reserviert + settings.expo_reserviert < data["Result"]["Total"]):
         result_fleet = True
     if(data["Result"]["ExpInUse"] < data["Result"]["ExpTotal"]):
         result_exp = True

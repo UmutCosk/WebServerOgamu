@@ -9,19 +9,20 @@ from . import ogamu
 already_saved_ids = []
 already_spied_ids = []
 call_back_ids = []
-all_spy_reports = []
 all_planets = []
 
 
 class SpyReport:
-    def __init__(self,gal,sys,pos,res=0):
+    def __init__(self,gal,sys,pos):
         self.gal = gal
         self.sys = sys
         self.pos = pos
-        self.res = res
+        self.res = 0
+        self.allow_attack = False
 
 class FarmPlanet:
-    def __init__(self,name,gal,sys,pos,moon=False):
+    def __init__(self,id,name,gal,sys,pos,moon=False):
+        self.id = id
         self.name = name
         self.gal = gal
         self.sys = sys
@@ -35,19 +36,47 @@ class FarmPlanet:
         self.current_scan_sys = 0
         self.current_scan_pos = 0
         self.max_scan_sys = 0
-        self.all_inactives_scans = []
+        self.min_sys = 0
+    # Spies
+        self.current_spy_index = 0
+        self.last_spy_index = 0
+    # Analyse
+        self.current_analyse_index = 0
+        self.last_analyse_index = 0
+        self.good_spy_reports = []
+    # Attack
+        self.current_attack_index = 0
+        self.last_attack_index = 0
+
 
     def init_scan_vars(self):
-        current_farm_plani = views.all_farm_planets.get_current_farm_planet()
-        current_gal = current_farm_plani.gal
-        current_sys = current_farm_plani.sys
-        (min, max) = ogamu.calc_around_gal(current_sys, settings.farming_radius)
-        self.current_scan_gal = current_gal
+        (min, max) = ogamu.calc_around_gal(self.sys, settings.farming_radius)
+        self.current_scan_gal = self.gal
         self.current_scan_sys = min
+        self.min_sys = min
         self.max_scan_sys = max
         self.turn_on()
-        views.current_state = FarmState.Scan
+
         print("Wurde initilaizisiert!")
+    def add_good_spy_report(self,spy_report):
+        self.good_spy_reports.append(spy_report)
+
+    def get_spy_report_pos(self,index):
+        gal = self.spy_reports[index].gal
+        sys = self.spy_reports[index].sys
+        pos = self.spy_reports[index].pos
+        return (gal,sys,pos)
+    def add_spy_report(self,gal,sys,pos):
+        spy_report = SpyReport(gal,sys,pos)
+        self.spy_reports.append(spy_report)
+    def add_good_spy_report(self, gal, sys, pos,res_ges):
+        spy_report = SpyReport(gal, sys, pos)
+        spy_report.res = res_ges
+        self.good_spy_reports.append(spy_report)
+    def remove_spy_report(self,gal,sys,pos):
+        for spy_report in self.spy_reports:
+            if(spy_report.gal == gal and spy_report.sys == sys and spy_report.pos == pos):
+                self.spy_reports.remove((spy_report))
     def turn_on(self):
         self.allowed_farming = True
     def turn_off(self):
@@ -65,6 +94,10 @@ class AllFarmPlanets:
         print("NEXT FARM PLANET!")
         if(self.currentIndex == len(self.planets)):
             self.currentIndex = 0
+        if(not self.planets[self.currentIndex].allowed_farming):
+            self.currentIndex = self.currentIndex + 1
+
+
     def already_exits(self,name):
         for planet in self.planets:
             if(name == planet.name):
@@ -75,8 +108,8 @@ class AllFarmPlanets:
             if (name == planet.name):
                 return planet
 
-    def add_planet(self,name,gal,sys,pos,moon=False):
-        farm_planet = FarmPlanet(name,gal,sys,pos,moon)
+    def add_planet(self,id,name,gal,sys,pos,moon=False):
+        farm_planet = FarmPlanet(id,name,gal,sys,pos,moon)
         self.planets.append(farm_planet)
 
 
@@ -124,6 +157,7 @@ class FarmState(Enum):
     Spy = "spy"
     Attack = "attack"
     Idle = "idle"
+    Analyse = "analyse"
     Init = "idle"
 
 

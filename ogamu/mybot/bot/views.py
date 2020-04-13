@@ -23,8 +23,10 @@ text_id = 0
 output_msg = ""
 farming_an = False
 init = True
+first_farm = True
 all_farm_planets = var_defs.AllFarmPlanets()
 current_state = var_defs.FarmState
+analyse_timer = 0
 
 
 def output_text(text):
@@ -48,26 +50,35 @@ def expo_tick():
 
 def farm_tick():
     global current_state
+    global analyse_timer
     if(farming_an):
-        print("Running farm...")
-        if(not current_state == var_defs.FarmState.Idle):
-            current_farm_planet = all_farm_planets.get_current_farm_planet()
-            if(not all_farm_planets.skip_if_not_allowed(current_farm_planet)):
-                if(current_state == var_defs.FarmState.Scan and not all_farm_planets.all_already_scanned()
-                        and not current_farm_planet.already_scanned):
-                    print("Scan Modus")
-                    main.scan_modus()
-                elif (current_state == var_defs.FarmState.Scan and not all_farm_planets.all_already_scanned()
-                        and current_farm_planet.already_scanned):
-                    all_farm_planets.next_farm_planet()
-                elif (current_state == var_defs.FarmState.Scan and all_farm_planets.all_already_scanned()):
-                    current_state = var_defs.FarmState.Spy
-                if (current_state == var_defs.FarmState.Spy):
-                    print("SPY Moduss")
-                    all_farm_planets.next_farm_planet()
-                    pass
-                if (current_state == var_defs.FarmState.Attack):
-                    pass
+        current_farm_planet = all_farm_planets.get_current_farm_planet()
+        print("Running farm on...: "+current_farm_planet.name)
+        if(not all_farm_planets.skip_if_not_allowed(current_farm_planet)):
+            if(current_state == var_defs.FarmState.Scan and not all_farm_planets.all_already_scanned()
+                    and not current_farm_planet.already_scanned):
+                print("Scan Modus")
+                main.scan_modus()
+            elif (current_state == var_defs.FarmState.Scan and not all_farm_planets.all_already_scanned()
+                    and current_farm_planet.already_scanned):
+                all_farm_planets.next_farm_planet()
+                print("SWITCH BACK!")
+            elif (current_state == var_defs.FarmState.Scan and all_farm_planets.all_already_scanned()):
+                current_state = var_defs.FarmState.Spy
+            if (current_state == var_defs.FarmState.Spy):
+                main.spy_modus()
+            if (current_state == var_defs.FarmState.Analyse):
+                analyse_timer = analyse_timer + 1
+                print("Anal.Timer: "+str(analyse_timer))
+                if(analyse_timer > 20):
+                    print("Anaaaal!")
+                    main.analyse_modus()
+            if (current_state == var_defs.FarmState.Attack):
+                print("Attack modudeska")
+                main.attack_modus()
+            if (current_state == var_defs.FarmState.Idle):
+                print("Idlemode")
+                main.go_out_of_idle()
 
 
 
@@ -78,9 +89,9 @@ def start_job():
     global job_autosave
     global job_expo
     global job_farm
-    job_autosave = scheduler.add_job(autosave_tick, 'interval', seconds=10 , id='autosave')
+    job_autosave = scheduler.add_job(autosave_tick, 'interval', seconds=45 , id='autosave')
     job_expo = scheduler.add_job(expo_tick, 'interval', seconds=60, id='expo')
-    job_farm = scheduler.add_job(farm_tick,'interval',seconds=3,id='farm')
+    job_farm = scheduler.add_job(farm_tick,'interval',seconds=1,id='farm')
     try:
         scheduler.start()
     except:
@@ -102,14 +113,15 @@ def home(request):
         init = False
         current_state = var_defs.FarmState.Scan
 
-
     return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                                'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
                                                'reaper_exp': settings.reaper_exp
         , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets})
+        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets,
+                                               "res_slot": settings.slots_reserviert,
+                                               "exp_slot": settings.expo_reserviert})
 
 
 #
@@ -135,13 +147,17 @@ def toggle_bot(request):
             output_text("Bot ist aus!")
         else:
             output_text("Bot ist bereits aus!")
+    settings.slots_reserviert = request.POST['reserve_slots']
+    settings.expo_reserviert = request.POST['exp_slots']
+
     return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                                'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
                                                'reaper_exp': settings.reaper_exp
         , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets})
+        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets,
+                                               "res_slot": settings.slots_reserviert ,"exp_slot": settings.expo_reserviert })
 
 
 def collect(request):
@@ -182,7 +198,9 @@ def collect(request):
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
                                                'reaper_exp': settings.reaper_exp
         , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets})
+        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets,
+                                               "res_slot": settings.slots_reserviert,
+                                               "exp_slot": settings.expo_reserviert})
 
 def set_expo(request):
     global farming_an
@@ -219,18 +237,22 @@ def set_expo(request):
     else:
         output_text("Expo gestartet!")
 
-
     return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                                'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
                                                'reaper_exp': settings.reaper_exp
         , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets})
+        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets,
+                                               "res_slot": settings.slots_reserviert,
+                                               "exp_slot": settings.expo_reserviert})
 
 def farming(request):
     global all_farm_planets
     global farming_an
+    global current_state
+    global first_farm
+    if_added = False
     if request.POST.get("farm_on", False):
         farming_an = True
     else:
@@ -244,10 +266,11 @@ def farming(request):
                     moon = False
                 (gal,sys,pos)= ogamu.get_coords(planet)
                 planet['isFarming'] = True
-                all_farm_planets.add_planet(planet["Name"],gal,sys,pos,moon)
+                all_farm_planets.add_planet(planet["ID"],planet["Name"],gal,sys,pos,moon)
                 print("Wurde der Datenbank hinzugefügt: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 farm_plani.init_scan_vars()
+                if_added = True
             else:
                 print("Ist schon in der Datenbank! Turn On!: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
@@ -258,15 +281,19 @@ def farming(request):
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 farm_plani.turn_off()
                 print("Ist schon in der Datenkbank! Turn off:!  "+planet["Name"])
-
-
+    if(if_added == True and first_farm == True):
+        current_state = var_defs.FarmState.Scan
+        first_farm = False
+        print("Scan started for the first time!")
 
     return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
-                                        'gt_exp': settings.große_transporter_exp
+                                               'gt_exp': settings.große_transporter_exp
         , 'lj_exp': settings.leichte_jaeger_exp, 'sj_exp': settings.schwere_jaeger_exp, 'xer_exp': settings.kreuzer_exp
         , 'ss_exp': settings.schlachtschiff_exp, 'sxer_exp': settings.schlachtkreuzer_exp,
-                                        'reaper_exp': settings.reaper_exp
+                                               'reaper_exp': settings.reaper_exp
         , 'spy_exp': settings.spio_sonde_exp, 'path_exp': settings.pathfinder_exp, 'exp_an_exp': settings.expo_an
-        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets})
+        , 'output_text': output_msg, "farm_on": farming_an, "farm_planets": var_defs.all_planets,
+                                               "res_slot": settings.slots_reserviert,
+                                               "exp_slot": settings.expo_reserviert})
 
 

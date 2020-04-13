@@ -22,11 +22,22 @@ input[type="number"] {
     {% csrf_token %}
 <!--    {% if bot_checked == "on" or not usersegment %}checked="checked"{% endif %}/> -->
     <fieldset>
+
         <legend>Bot an- oder ausschalten</legend>
         <input id="bot_an" type="radio" name="bot_status" value="bot_an" {% if bot_on %} checked {% endif %}>
         <label>Bot an</label>
         <input id="bot_aus" type="radio" name="bot_status" value="bot_aus" {% if not bot_on %} checked {% endif %}>
         <label>Bot aus</label>
+
+        <ul>
+             <label>Reserve Slots:</label>
+             <input type="number" name="reserve_slots" value={{ res_slot }}>
+
+             <label>Expo Slots : </label>
+             <input type="number" name="exp_slots" value={{ exp_slot }}>
+
+         </ul>
+
     </fieldset>
     <input type="submit">
 </form>
@@ -93,10 +104,6 @@ input[type="number"] {
             <label> {{farm_planet.Name}}</label>
         {% endfor %}
         </ul>
-        </ul>
-
-
-
     </fieldset>
     <input type="submit" value="Sammeln" >
 </form>
