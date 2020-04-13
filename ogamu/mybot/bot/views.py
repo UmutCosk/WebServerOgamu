@@ -274,11 +274,15 @@ def farming(request):
             else:
                 print("Ist schon in der Datenbank! Turn On!: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
+                current_state == var_defs.FarmState.Scan
+
                 farm_plani.turn_on()
         else:
             if(all_farm_planets.already_exits(planet["Name"])):
                 planet['isFarming'] = False
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
+                if(all_farm_planets.get_current_farm_planet().name == planet["Name"]):
+                    current_state == var_defs.FarmState.Scan
                 farm_plani.turn_off()
                 print("Ist schon in der Datenkbank! Turn off:!  "+planet["Name"])
     if(if_added == True and first_farm == True):
