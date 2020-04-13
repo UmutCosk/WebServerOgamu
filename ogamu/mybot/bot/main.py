@@ -25,6 +25,14 @@ def get_galaxy_info(gal, sys):
     data = r.json()
     return data
 
+def get_coords_of_another_planet(mygal,mysys,mypos):
+    for planet in var_defs.all_planets:
+        print(planet)
+        if(not(planet["Coordinate"]["Galaxy"] == mygal and planet["Coordinate"]["System"] == mysys and planet["Coordinate"]["Position"] == mypos)):
+            return (planet["Coordinate"]["Galaxy"],planet["Coordinate"]["System"] ,planet["Coordinate"]["Position"])
+    return (0,0,0)
+
+
 def saveAllFleet(attacked_planet):
     id_planet = ogamu.get_celest_ID2(attacked_planet)
     (gal, sys, pos) = ogamu.get_coords2(attacked_planet)
@@ -32,18 +40,11 @@ def saveAllFleet(attacked_planet):
     # Schiffe
     ships = ogamu.get_all_ships2(id_planet)
     fleet = var_defs.Fleet(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,ships=ships)
-    ##Search for EmptySlot
-    for i in range(100):
-        sys = sys + 1 + i
-        if (sys > 499):
-            sys = sys - 499
-        sys_data = get_galaxy_info(gal, sys)
-        enemy_planet = sys_data["Result"]["Planets"][0]
-        if(enemy_planet == None):
-            break
-
+    (target_gal,target_sys,target_pos) = get_coords_of_another_planet(gal,sys,pos)
+    print(target_gal,target_sys,target_pos)
     data = fleet.fill_fleet_data(
-        gal, sys, 1, var_defs.Missions.Colonize.value, 1, metal, crystal, deut)
+        target_gal, target_sys, target_pos, var_defs.Missions.Park.value, 1, metal, crystal, deut)
+    print("ID: "+str(id_planet))
     data = fleet.send_fleet(id_planet, data)
     print(data)
     if(not data["Status"] == 'error'):
@@ -53,6 +54,12 @@ def saveAllFleet(attacked_planet):
         print("YOU DON'T HAVE ANY SHIPS!")
 
 
+def already_scanned(gal,sys,pos):
+    for already_spied_id in var_defs.already_spied_ids:
+        if(already_spied_id.gal == gal and already_spied_id.sys == sys and already_spied_id.pos == pos ):
+            return True
+    return False
+
 def autoSave():
     attacks = ogamu.get_all_attacks()
     if attacks is not None:
@@ -61,20 +68,20 @@ def autoSave():
                 arrival_time = attack["ArriveIn"]
                 print("arrival time: "+str(arrival_time))
                 # Zurück spionieren bei unter 1234 Sekunden
-                if (attack["ID"] not in var_defs.already_spied_ids and arrival_time < 2345):
+                check_coords = var_defs.Coords(attack["Origin"]["Galaxy"],attack["Origin"]["System"],attack["Origin"]["Position"])
+                if (not already_scanned(check_coords.gal,check_coords.sys,check_coords.pos) and arrival_time < 2345):
                     if(not ogamu.onlySpy(attack) or settings.test_on):
-                        var_defs.already_spied_ids.append(attack["ID"])
+                        var_defs.already_spied_ids.append(check_coords)
                         ogamu.spyEnemy2(attack["Origin"],
                                        attack["Destination"])
                         ogamu.isUnderAttack()
-                        time.sleep(3)
+                        print("ENEMY ZURÜCK GESCANNT!")
                 # Saven bei unter 123 Sekunden
                 if(arrival_time < 240 and attack["ID"] not in var_defs.already_saved_ids):
                     if(not ogamu.onlySpy(attack) or settings.test_on):
                         var_defs.already_saved_ids.append(attack["ID"])
                         saveAllFleet(attack["Destination"])
                         ogamu.isUnderAttack()
-                        time.sleep(3)
         else:
             ogamu.callBackFleet(var_defs.call_back_ids)
             var_defs.already_saved_ids.clear()

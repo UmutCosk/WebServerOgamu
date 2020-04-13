@@ -43,15 +43,15 @@ def isUnderAttack():
 def is_slots_ready_for_next_attack():
     r = requests.get(url="http://" + settings.adress + "/bot/fleets/slots")
     data = r.json()
-    slots_that_should_be_free = settings.slots_reserviert + settings.expo_reserviert
-    if(data["Result"]["InUse"] <= slots_that_should_be_free):
+    slots_that_should_be_free = int(settings.slots_reserviert) + int(settings.expo_reserviert)
+    if(data["Result"]["InUse"] <= int(slots_that_should_be_free)):
         return True
     return False
 
 def get_allowed_slots():
     r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
-    return data["Result"]["Total"] - data["Result"]["InUse"] - settings.slots_reserviert - settings.expo_reserviert
+    return data["Result"]["Total"] - data["Result"]["InUse"] - int(settings.slots_reserviert) - int(settings.expo_reserviert)
 
 
 
@@ -60,7 +60,7 @@ def checkSlots():
     result_exp = False
     r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
-    if(data["Result"]["InUse"] + settings.slots_reserviert + settings.expo_reserviert < data["Result"]["Total"]):
+    if(data["Result"]["InUse"] + int(settings.slots_reserviert) + int(settings.expo_reserviert) - data["Result"]["ExpInUse"]  < data["Result"]["Total"]):
         result_fleet = True
     if(data["Result"]["ExpInUse"] < data["Result"]["ExpTotal"]):
         result_exp = True
@@ -278,8 +278,7 @@ def spyEnemy2(enemy_planet, my_celest):
     fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0,1,0,0,0,0)
     data = fleet.fill_fleet_data(
-        gal, sys, pos, var_defs.Missions.Spy.value, 9, 0, 0, 0)
-    data = fleet.send_fleet(id_celest, data)
+        gal, sys, pos, var_defs.Missions.Spy.value,9, 0, 0, 0)
     print("Enemy spied!")
 
 def calc_around_gal(sys, radius):
