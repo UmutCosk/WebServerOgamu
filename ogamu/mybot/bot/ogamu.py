@@ -48,6 +48,16 @@ def is_slots_ready_for_next_attack():
         return True
     return False
 
+
+def get_plani_by_name(name):
+    for planet in var_defs.all_planets:
+        if(planet["Name"] == name):
+            return planet
+    return None
+
+
+
+
 def get_allowed_slots():
     r = requests.get(url="http://"+settings.adress+"/bot/fleets/slots")
     data = r.json()
@@ -101,6 +111,13 @@ def get_celest_ID(celestial):
         celest = r.json()
     return celest["Result"]["ID"]
 
+def get_celest_ID3(celestial):
+    (gal, sys, pos) = get_coords(celestial)
+    r = requests.get(
+            url="http://"+settings.adress+"/bot/moons/"+str(gal)+"/"+str(sys)+"/"+str(pos))
+    celest = r.json()
+    return celest["Result"]["ID"]
+
 def get_coords2(celest):
     gal = celest["Galaxy"]
     sys = celest["System"]
@@ -121,6 +138,7 @@ def get_celest_ID2(celestial):
             url="http://"+settings.adress+"/bot/planets/"+str(gal)+"/"+str(sys)+"/"+str(pos))
         celest = r.json()
     return celest["Result"]["ID"]
+
 
 
 

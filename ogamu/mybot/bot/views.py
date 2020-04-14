@@ -51,7 +51,7 @@ def expo_tick():
 def farm_tick():
     global current_state
     global analyse_timer
-    if(farming_an):
+    if(farming_an and bot_is_on):
         current_farm_planet = all_farm_planets.get_current_farm_planet()
         print("Running farm on...: "+current_farm_planet.name)
         if(not all_farm_planets.skip_if_not_allowed(current_farm_planet)):
@@ -174,13 +174,20 @@ def collect(request):
                         moon = False
                         if(request.POST.get('collect4',False) == "on"):
                             moon = True
-
                         celest = ogamu.get_celest_by_pos(gal, sys,pos,moon)
-                        if (not celest is None):
-                            output_text("Sammeln auf P:" + str(gal) + ":" + str(sys) + ":" + str(pos))
-                            main.gather_all_res(gal, sys, pos, moon)
+                        selected_planis = []
+                        allowed_slots = ogamu.get_allowed_slots()
+                        for planet in var_defs.all_planets:
+                            if request.POST.get(planet["Name"], False) == "on" and not planet["Name"] == celest["Name"]:
+                                selected_planis.append(planet["Name"])
+                        if(len(selected_planis) <= allowed_slots):
+                            if (not celest is None):
+                                output_text("Sammeln auf P:" + str(gal) + ":" + str(sys) + ":" + str(pos))
+                                main.gather_all_res(gal, sys, pos,selected_planis,moon)
+                            else:
+                                output_text("Diese Koords gibt es nicht!")
                         else:
-                            output_text("Diese Koords gibt es nicht!")
+                            output_text("Du hast nicht genug freie Slots!")
                     else:
                         output_text("Error: Planizahl ist außerhalb des Wertebereichs")
                 else:
@@ -262,11 +269,15 @@ def farming(request):
         if request.POST.get(planet["Name"],False) == "on":
             if(not all_farm_planets.already_exits(planet["Name"])):
                 moon = True
+                id = planet["ID"]
                 if(planet["Moon"]==None):
                     moon = False
+                else:
+                    id = ogamu.get_celest_ID(planet)
                 (gal,sys,pos)= ogamu.get_coords(planet)
                 planet['isFarming'] = True
-                all_farm_planets.add_planet(planet["ID"],planet["Name"],gal,sys,pos,moon)
+
+                all_farm_planets.add_planet(id,planet["Name"],gal,sys,pos,moon)
                 print("Wurde der Datenbank hinzugefügt: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 farm_plani.init_scan_vars()

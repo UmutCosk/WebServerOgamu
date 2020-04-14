@@ -54,7 +54,12 @@ input[type="number"] {
         <input type="number" name="collect2" ,value="sys">
         <label>Ziel Pos:</label>
         <input type="number" name="collect3" ,value="pos">
-
+        <br>
+         <legend>From Planets:</legend>
+        {% for farm_planet in farm_planets %}
+        <input type="checkbox" name="{{farm_planet.Name}}" {{farm_planet.Name}} {% if farm_planet.isFarming %} checked{% endif %}>
+        <label> {{farm_planet.Name}}</label>
+        {% endfor %}
     </fieldset>
     <input type="submit" value="Sammeln">
 </form>
