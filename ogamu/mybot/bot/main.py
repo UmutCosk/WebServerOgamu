@@ -209,6 +209,7 @@ def analyse_modus():
             spy_report = ogamu.get_spy_report(gal, sys, pos)
             if (not spy_report["Status"] == 'error'):
                 break
+            print("Könnte Spio Bericht nicht auslesen: "+str(gal)+":"+str(sys)+":"+str(pos))
         views.farming_an = True
     elif (not spy_report["Status"] == 'error'):
         if(is_good_spy_report(spy_report)):
