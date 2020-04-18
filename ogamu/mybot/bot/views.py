@@ -27,6 +27,7 @@ first_farm = True
 all_farm_planets = var_defs.AllFarmPlanets()
 current_state = var_defs.FarmState
 analyse_timer = 0
+farm_timer = 1
 
 
 def output_text(text):
@@ -47,6 +48,7 @@ def expo_tick():
     if(settings.expo_an and bot_is_on):
         main.startExpo()
         print("Running expo...")
+
 
 def farm_tick():
     global current_state
@@ -70,7 +72,7 @@ def farm_tick():
             if (current_state == var_defs.FarmState.Analyse):
                 analyse_timer = analyse_timer + 1
                 print("Anal.Timer: "+str(analyse_timer))
-                if(analyse_timer > 20):
+                if(analyse_timer > 100):
                     print("Anaaaal!")
                     main.analyse_modus()
             if (current_state == var_defs.FarmState.Attack):
@@ -82,8 +84,6 @@ def farm_tick():
 
 
 
-
-
 def start_job():
     print("START!")
     global job_autosave
@@ -91,7 +91,7 @@ def start_job():
     global job_farm
     job_autosave = scheduler.add_job(autosave_tick, 'interval', seconds=45 , id='autosave')
     job_expo = scheduler.add_job(expo_tick, 'interval', seconds=60, id='expo')
-    job_farm = scheduler.add_job(farm_tick,'interval',seconds=1,id='farm')
+    job_farm = scheduler.add_job(farm_tick,'interval', seconds=farm_timer, id='farm')
     try:
         scheduler.start()
     except:
@@ -102,6 +102,7 @@ def stop_job():
     scheduler.remove_job('autosave')
     scheduler.remove_job('expo')
     scheduler.remove_job('farm')
+
 
 def home(request):
     global init
@@ -260,10 +261,6 @@ def farming(request):
     global current_state
     global first_farm
     if_added = False
-    if request.POST.get("farm_on", False):
-        farming_an = True
-    else:
-        farming_an = False
 
     for planet in var_defs.all_planets:
         if request.POST.get(planet["Name"],False) == "on":
@@ -273,7 +270,8 @@ def farming(request):
                 if(planet["Moon"]==None):
                     moon = False
                 else:
-                    id = ogamu.get_celest_ID(planet)
+                    id = ogamu.get_celest_ID3(planet)
+                    print(id)
                 (gal,sys,pos)= ogamu.get_coords(planet)
                 planet['isFarming'] = True
 
@@ -300,6 +298,10 @@ def farming(request):
         current_state = var_defs.FarmState.Scan
         first_farm = False
         print("Scan started for the first time!")
+    if request.POST.get("farm_on", False):
+        farming_an = True
+    else:
+        farming_an = False
 
     return render(request, 'home_norma.html', {'bot_on': bot_is_on, 'kt_exp': settings.kleine_transporter_exp,
                                                'gt_exp': settings.große_transporter_exp

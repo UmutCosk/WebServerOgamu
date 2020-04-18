@@ -265,10 +265,10 @@ def attack_modus():
         end_attack_modus()
 
 def go_out_of_idle():
-    if(ogamu.is_slots_ready_for_next_attack()):
+    if (ogamu.checkSlots()[0] == True):
         views.all_farm_planets.next_farm_planet()
         views.current_state = var_defs.FarmState.Scan
-        print("cycle done: Scan modus an")
+        print("Cycle done: Scan modus an")
 
 
 
