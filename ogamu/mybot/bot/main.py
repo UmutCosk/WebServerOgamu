@@ -8,6 +8,7 @@ from . import var_defs
 from . import settings
 from . import ogamu
 from . import views
+import math
 
 def startExpo():
     if settings.expo_an:
@@ -40,10 +41,8 @@ def saveAllFleet(attacked_planet):
     # Schiffe
     ships = ogamu.get_all_ships2(id_planet)
     fleet = var_defs.Fleet(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,ships=ships)
-    (target_gal,target_sys,target_pos) = get_coords_of_another_planet(gal,sys,pos)
-    print(target_gal,target_sys,target_pos)
     data = fleet.fill_fleet_data(
-        target_gal, target_sys, target_pos, var_defs.Missions.Park.value, 1, metal, crystal, deut)
+        gal, sys, 16, var_defs.Missions.Spy.value, 1, metal, crystal, deut)
     print("ID: "+str(id_planet))
     data = fleet.send_fleet(id_planet, data)
     print(data)
@@ -72,8 +71,7 @@ def autoSave():
                 if (not already_scanned(check_coords.gal,check_coords.sys,check_coords.pos) and arrival_time < 2345):
                     if(not ogamu.onlySpy(attack) or settings.test_on):
                         var_defs.already_spied_ids.append(check_coords)
-                        ogamu.spyEnemy2(attack["Origin"],
-                                       attack["Destination"])
+                        ogamu.spyEnemy2(attack["Origin"], ogamu.get_celest_ID2(attack["Destination"]))
                         ogamu.isUnderAttack()
                         print("ENEMY ZURÜCK GESCANNT!")
                 # Saven bei unter 123 Sekunden
@@ -179,12 +177,12 @@ def scan_modus():
             current_farm_plani.current_spy_index = 0
             current_farm_plani.current_scan_sys = current_farm_plani.min_sys
 
+
 def spy_modus():
     if (ogamu.checkSlots()[0] == True):
         current_farm_plani = views.all_farm_planets.get_current_farm_planet()
         (gal,sys,pos) = current_farm_plani.get_spy_report_pos(current_farm_plani.current_spy_index)
-        celest = ogamu.get_celest_by_pos(current_farm_plani.gal,current_farm_plani.sys,current_farm_plani.pos)
-        ogamu.spyEnemy(gal,sys,pos,celest)
+        ogamu.spyEnemy(gal,sys,pos,current_farm_plani.id)
         current_farm_plani.current_spy_index = current_farm_plani.current_spy_index + 1
         if(current_farm_plani.current_spy_index == current_farm_plani.last_spy_index ):
             print("Spy modus done!")
@@ -237,6 +235,9 @@ def end_attack_modus():
     views.current_state = var_defs.FarmState.Idle
     print("End Attack!")
 
+def roundup(x):
+    return int(math.ceil(x / 10.0)) * 10
+
 def attack_modus():
     if (ogamu.checkSlots()[0] == True):
         current_farm_plani = views.all_farm_planets.get_current_farm_planet()
@@ -246,11 +247,14 @@ def attack_modus():
         spy_report =  current_farm_plani.good_spy_reports[current_farm_plani.current_attack_index]
         number_kt = round(
             (spy_report.res / kt_kapa) * settings.kt_ratio)
+
+
         if (number_kt < total_kt):
             total_kt = total_kt - number_kt
         elif (number_kt > total_kt):
             number_kt = total_kt
             total_kt = 0
+        number_kt = roundup(number_kt)
         my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
                                   0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
         data = my_fleet.fill_fleet_data(spy_report.gal, spy_report.sys,

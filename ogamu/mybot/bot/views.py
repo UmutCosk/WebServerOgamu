@@ -4,6 +4,7 @@ from django.shortcuts import render
 from schedule import Scheduler
 import schedule
 import time
+import random
 from . import main
 from . import settings
 from . import var_defs
@@ -13,6 +14,7 @@ from django.contrib.auth.models import User, auth
 from django.shortcuts import render,redirect
 from django.contrib import messages
 import apscheduler.schedulers.blocking
+import math
 
 bot_is_on = False
 scheduler = BackgroundScheduler()
@@ -27,7 +29,9 @@ first_farm = True
 all_farm_planets = var_defs.AllFarmPlanets()
 current_state = var_defs.FarmState
 analyse_timer = 0
-farm_timer = 1
+farm_timer = 0.5
+random_timer = 30
+
 
 
 def output_text(text):
@@ -49,8 +53,11 @@ def expo_tick():
         main.startExpo()
         print("Running expo...")
 
-
+counter_bot = 0
+counter_rand = random.randint(6, 14)
 def farm_tick():
+    global counter_bot
+    global counter_rand
     global current_state
     global analyse_timer
     if(farming_an and bot_is_on):
@@ -67,17 +74,27 @@ def farm_tick():
                 print("SWITCH BACK!")
             elif (current_state == var_defs.FarmState.Scan and all_farm_planets.all_already_scanned()):
                 current_state = var_defs.FarmState.Spy
-            if (current_state == var_defs.FarmState.Spy):
+                counter_bot = 0
+                counter_rand = random.randint(6, 14)
+            if (current_state == var_defs.FarmState.Spy and counter_bot > counter_rand):
                 main.spy_modus()
+                counter_bot = 0
+                counter_rand = random.randint(6, 14)
+            elif current_state == var_defs.FarmState.Spy:
+                counter_bot = counter_bot + 1
             if (current_state == var_defs.FarmState.Analyse):
                 analyse_timer = analyse_timer + 1
                 print("Anal.Timer: "+str(analyse_timer))
-                if(analyse_timer > 100):
+                if(analyse_timer > 200):
                     print("Anaaaal!")
                     main.analyse_modus()
-            if (current_state == var_defs.FarmState.Attack):
+            if (current_state == var_defs.FarmState.Attack and counter_bot > counter_rand):
                 print("Attack modudeska")
                 main.attack_modus()
+                counter_bot = 0
+                counter_rand = random.randint(6, 14)
+            elif current_state == var_defs.FarmState.Attack:
+                counter_bot = counter_bot + 1
             if (current_state == var_defs.FarmState.Idle):
                 print("Idlemode")
                 main.go_out_of_idle()
@@ -255,7 +272,9 @@ def set_expo(request):
                                                "res_slot": settings.slots_reserviert,
                                                "exp_slot": settings.expo_reserviert})
 
+id_celest = 0
 def farming(request):
+    global id_celest
     global all_farm_planets
     global farming_an
     global current_state
@@ -266,16 +285,16 @@ def farming(request):
         if request.POST.get(planet["Name"],False) == "on":
             if(not all_farm_planets.already_exits(planet["Name"])):
                 moon = True
-                id = planet["ID"]
+                id_celest = planet["ID"]
                 if(planet["Moon"]==None):
                     moon = False
                 else:
-                    id = ogamu.get_celest_ID3(planet)
-                    print(id)
+                    id_celest = ogamu.get_celest_ID3(planet)
+                    print(id_celest)
                 (gal,sys,pos)= ogamu.get_coords(planet)
                 planet['isFarming'] = True
 
-                all_farm_planets.add_planet(id,planet["Name"],gal,sys,pos,moon)
+                all_farm_planets.add_planet(id_celest,planet["Name"],gal,sys,pos,moon)
                 print("Wurde der Datenbank hinzugefügt: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 farm_plani.init_scan_vars()

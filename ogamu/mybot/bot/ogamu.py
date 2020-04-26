@@ -281,22 +281,22 @@ def get_celest_ressis2(celest):
     return (met, crys, deut)
 
 
-def spyEnemy(gal,sys,pos, my_celest):
-    id_celest = get_celest_ID(my_celest)
+def spyEnemy(gal,sys,pos, my_celest_id):
     fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, settings.spy_for_farming, 0, 0, 0, 0)
     data = fleet.fill_fleet_data(
         gal, sys, pos, var_defs.Missions.Spy.value, 10, 0, 0, 0)
-    data = fleet.send_fleet(id_celest, data)
+    data = fleet.send_fleet(my_celest_id, data)
     print("Enemy spied!")
 
-def spyEnemy2(enemy_planet, my_celest):
-    id_celest = get_celest_ID2(my_celest)
+def spyEnemy2(enemy_planet, my_celest_id):
+
     (gal, sys, pos) = get_coords2(enemy_planet)
     fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0,1,0,0,0,0)
+                           0, 0, 0,5,0,0,0,0)
     data = fleet.fill_fleet_data(
         gal, sys, pos, var_defs.Missions.Spy.value,9, 0, 0, 0)
+    data = fleet.send_fleet(my_celest_id, data)
     print("Enemy spied!")
 
 def calc_around_gal(sys, radius):
@@ -312,10 +312,6 @@ def calc_around_gal(sys, radius):
         min_result = 499 + min
     else:
         min_result = min
-    if(min_result > max_result):
-        temp_max = min_result
-        min_result = max_result
-        max_result = temp_max
     return (min_result, max_result)
 
 
