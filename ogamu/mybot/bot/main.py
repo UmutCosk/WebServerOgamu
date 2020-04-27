@@ -154,6 +154,7 @@ switch_sys = True
 def scan_modus():
     global sys_data
     global  switch_sys
+
     current_farm_plani = views.all_farm_planets.get_current_farm_planet()
     if(switch_sys):
         sys_data = ogamu.get_galaxy_info(current_farm_plani.current_scan_gal, current_farm_plani.current_scan_sys)
@@ -170,6 +171,8 @@ def scan_modus():
         current_farm_plani.current_scan_pos = 0
         current_farm_plani.current_scan_sys = current_farm_plani.current_scan_sys + 1
         switch_sys = True
+        if current_farm_plani.current_scan_sys == 500:
+            current_farm_plani.current_scan_sys = 1
         if(current_farm_plani.current_scan_sys == current_farm_plani.max_scan_sys):
             print("Scan done for: !"+str(current_farm_plani.name))
             current_farm_plani.already_scanned = True

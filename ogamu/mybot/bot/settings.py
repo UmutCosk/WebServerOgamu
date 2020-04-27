@@ -10,8 +10,8 @@ test_on = False
 # ---Farming--- #
 kt_ratio = 0.80
 spy_for_farming = 10
-farming_radius = 40
-min_rank = 1800
+farming_radius = 45
+min_rank = 50000
 max_rank = 1
 
 # ---Expeditions--- #
