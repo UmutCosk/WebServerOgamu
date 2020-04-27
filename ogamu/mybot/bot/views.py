@@ -280,6 +280,7 @@ def farming(request):
     global current_state
     global first_farm
     if_added = False
+    at_least_one = False
 
     for planet in var_defs.all_planets:
         if request.POST.get(planet["Name"],False) == "on":
@@ -299,11 +300,13 @@ def farming(request):
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 farm_plani.init_scan_vars()
                 if_added = True
+                at_least_one = True
             else:
                 print("Ist schon in der Datenbank! Turn On!: "+planet["Name"])
                 farm_plani = all_farm_planets.get_planet_by_name(planet["Name"])
                 current_state == var_defs.FarmState.Scan
-
+                planet['isFarming'] = True
+                at_least_one = True
                 farm_plani.turn_on()
         else:
             if(all_farm_planets.already_exits(planet["Name"])):
@@ -317,7 +320,7 @@ def farming(request):
         current_state = var_defs.FarmState.Scan
         first_farm = False
         print("Scan started for the first time!")
-    if request.POST.get("farm_on", False):
+    if request.POST.get("farm_on", False) and at_least_one:
         farming_an = True
     else:
         farming_an = False
