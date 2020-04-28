@@ -96,8 +96,6 @@ class AllFarmPlanets:
             self.currentIndex = 0
         if(not self.planets[self.currentIndex].allowed_farming):
             self.currentIndex = self.currentIndex + 1
-
-
     def already_exits(self,name):
         for planet in self.planets:
             if(name == planet.name):

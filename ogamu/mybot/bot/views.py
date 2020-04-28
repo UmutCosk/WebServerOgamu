@@ -31,6 +31,8 @@ current_state = var_defs.FarmState
 analyse_timer = 0
 farm_timer = 0.5
 random_timer = 30
+idle_timer = 5
+idle_counter = 0
 
 
 
@@ -61,6 +63,7 @@ def farm_tick():
     global current_state
     global analyse_timer
     if(farming_an and bot_is_on):
+        print(current_state)
         current_farm_planet = all_farm_planets.get_current_farm_planet()
         print("Running farm on...: "+current_farm_planet.name)
         if(not all_farm_planets.skip_if_not_allowed(current_farm_planet)):

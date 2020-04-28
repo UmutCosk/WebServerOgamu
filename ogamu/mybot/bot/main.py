@@ -167,10 +167,12 @@ def scan_modus():
         current_farm_plani.add_spy_report(gal,sys,pos)
         print("Found good inactive!")
     current_farm_plani.current_scan_pos = current_farm_plani.current_scan_pos + 1
+    print("Sys: " + str(current_farm_plani.current_scan_sys) + "Pos: " + str(current_farm_plani.current_scan_pos))
     if(current_farm_plani.current_scan_pos == 15):
         current_farm_plani.current_scan_pos = 0
         current_farm_plani.current_scan_sys = current_farm_plani.current_scan_sys + 1
         switch_sys = True
+
         if current_farm_plani.current_scan_sys == 500:
             current_farm_plani.current_scan_sys = 1
         if(current_farm_plani.current_scan_sys == current_farm_plani.max_scan_sys):
@@ -184,15 +186,22 @@ def scan_modus():
 def spy_modus():
     if (ogamu.checkSlots()[0] == True):
         current_farm_plani = views.all_farm_planets.get_current_farm_planet()
-        (gal,sys,pos) = current_farm_plani.get_spy_report_pos(current_farm_plani.current_spy_index)
-        ogamu.spyEnemy(gal,sys,pos,current_farm_plani.id)
-        current_farm_plani.current_spy_index = current_farm_plani.current_spy_index + 1
-        if(current_farm_plani.current_spy_index == current_farm_plani.last_spy_index ):
-            print("Spy modus done!")
+        if len(current_farm_plani.spy_reports) > 0:
+            (gal,sys,pos) = current_farm_plani.get_spy_report_pos(current_farm_plani.current_spy_index)
+            ogamu.spyEnemy(gal,sys,pos,current_farm_plani.id)
+            current_farm_plani.current_spy_index = current_farm_plani.current_spy_index + 1
+            if(current_farm_plani.current_spy_index == current_farm_plani.last_spy_index ):
+                print("Spy modus done!")
+                current_farm_plani.last_analyse_index = len(current_farm_plani.spy_reports)
+                current_farm_plani.current_analyse_index = 0
+                current_farm_plani.current_spy_index = 0
+                views.current_state = var_defs.FarmState.Analyse
+        else:
+            print("Keine Spio Berichte gefunden! Radius zu klein? Rang zu streng gewählt?")
             current_farm_plani.last_analyse_index = len(current_farm_plani.spy_reports)
             current_farm_plani.current_analyse_index = 0
             current_farm_plani.current_spy_index = 0
-            views.current_state = var_defs.FarmState.Analyse
+            views.current_state = var_defs.FarmState.Idle
     else:
         print("No Slots currently available")
 
@@ -244,38 +253,46 @@ def roundup(x):
 def attack_modus():
     if (ogamu.checkSlots()[0] == True):
         current_farm_plani = views.all_farm_planets.get_current_farm_planet()
-        ships = ogamu.get_all_ships2(current_farm_plani.id)
-        total_kt = ships['Result']['SmallCargo']
-        (kt_kapa, gt_kapa) = ogamu.get_cargo_kapa()
-        spy_report =  current_farm_plani.good_spy_reports[current_farm_plani.current_attack_index]
-        number_kt = round(
-            (spy_report.res / kt_kapa) * settings.kt_ratio)
+        if len(current_farm_plani.good_spy_reports) > 0 :
+            ships = ogamu.get_all_ships2(current_farm_plani.id)
+            total_kt = ships['Result']['SmallCargo']
+            (kt_kapa, gt_kapa) = ogamu.get_cargo_kapa()
+            spy_report =  current_farm_plani.good_spy_reports[current_farm_plani.current_attack_index]
+            number_kt = round(
+                (spy_report.res / kt_kapa) * settings.kt_ratio)
 
 
-        if (number_kt < total_kt):
-            total_kt = total_kt - number_kt
-        elif (number_kt > total_kt):
-            number_kt = total_kt
-            total_kt = 0
-        number_kt = roundup(number_kt)
-        my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
-                                  0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
-        data = my_fleet.fill_fleet_data(spy_report.gal, spy_report.sys,
-                                        spy_report.pos,
-                                        var_defs.Missions.Attack.value, 10, 0, 0, 0)
-        my_fleet.send_fleet(current_farm_plani.id, data)
-        print("Attacked plani!")
-        current_farm_plani.current_attack_index = current_farm_plani.current_attack_index + 1
-        if(current_farm_plani.current_attack_index == current_farm_plani.last_attack_index or total_kt == 0):
+            if (number_kt < total_kt):
+                total_kt = total_kt - number_kt
+            elif (number_kt > total_kt):
+                number_kt = total_kt
+                total_kt = 0
+            number_kt = roundup(number_kt)
+            my_fleet = var_defs.Fleet(0, 0, 0, 0, 0, 0,
+                                      0, 0, number_kt, 0, 0, 0, 0, 0, 0, 0, 0)
+            data = my_fleet.fill_fleet_data(spy_report.gal, spy_report.sys,
+                                            spy_report.pos,
+                                            var_defs.Missions.Attack.value, 10, 0, 0, 0)
+            my_fleet.send_fleet(current_farm_plani.id, data)
+            print("Attacked plani!")
+            current_farm_plani.current_attack_index = current_farm_plani.current_attack_index + 1
+            if(current_farm_plani.current_attack_index == current_farm_plani.last_attack_index or total_kt == 0):
+                end_attack_modus()
+        else:
+            print("Nicht genug gute Spyreports zum angreifen gefunden!")
             end_attack_modus()
     else:
         end_attack_modus()
 
 def go_out_of_idle():
     if (ogamu.checkSlots()[0] == True):
-        views.all_farm_planets.next_farm_planet()
-        views.current_state = var_defs.FarmState.Scan
-        print("Cycle done: Scan modus an")
+        if(views.idle_counter > views.idle_timer*2*60):
+            views.idle_counter = 0
+            views.all_farm_planets.next_farm_planet()
+            views.current_state = var_defs.FarmState.Scan
+            print("Cycle done: Scan modus an")
+        else:
+            views.idle_counter = views.idle_counter + 1
 
 
 
